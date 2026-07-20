@@ -7,7 +7,7 @@
   <style>
     *{box-sizing:border-box;font-family:Segoe UI,system-ui,sans-serif}
     html,body{margin:0;padding:0;background:#0f1115;color:#e8eaed}
-    .app{max-width:480px;margin:0 auto;padding:12px 12px 80px 12px}
+    .app{max-width:480px;margin:0 auto;padding:12px 12px 86px 12px}
     .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
     .top h1{color:#ff7a45;font-size:18px;margin:0}
     .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
@@ -17,7 +17,7 @@
     .kpi.ok .v{color:#6bffb0}.kpi.warn .v{color:#ffce6b}
     .card{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:12px;margin-bottom:12px}
     .card h3{color:#ff7a45;margin:0 0 8px;font-size:14px}
-    select,input{width:100%;padding:10px;border-radius:9px;border:1px solid #2a2e36;background:#0f1115;color:#e8eaed;margin:4px 0}
+    input,select,textarea{width:100%;padding:10px;border-radius:9px;border:1px solid #2a2e36;background:#0f1115;color:#e8eaed;margin:4px 0}
     .btn{width:100%;padding:12px;border:none;border-radius:9px;background:#ff7a45;color:#fff;font-weight:600;margin-top:8px}
     .btn2{background:#2a2e36;color:#e8eaed}
     table{width:100%;border-collapse:collapse;font-size:12px}
@@ -48,7 +48,7 @@
     <div id="app" class="hidden">
       <div class="top">
         <h1>Jastip Tracker</h1>
-        <select id="tripSel" onchange="renderDashboard()"></select>
+        <button class="btn2" style="width:auto;padding:8px 12px;border-radius:9px" onclick="logout()">Logout</button>
       </div>
 
       <div class="grid">
@@ -62,6 +62,16 @@
       <div class="card">
         <h3>Top Customers</h3>
         <div id="topCustomers"></div>
+      </div>
+
+      <div class="card">
+        <h3>Tambah Order Manual</h3>
+        <input id="fName" placeholder="Customer name" />
+        <input id="fWa" placeholder="WA, contoh 62812xxxx" />
+        <input id="fTrip" placeholder="Trip ID, contoh 1" />
+        <input id="fDp" placeholder="DP IDR" />
+        <textarea id="fNotes" placeholder="Notes / item"></textarea>
+        <button class="btn" onclick="createOrder()">Simpan Order</button>
       </div>
 
       <div class="card">
@@ -79,7 +89,7 @@
         <div id="tripsList"></div>
       </div>
 
-      <button class="fab" onclick="openFab()">+</button>
+      <button class="fab" onclick="scrollToForm()">+</button>
       <div class="nav">
         <a href="#" class="act" onclick="showTab('home')"><span class="ico">🏠</span>Home</a>
         <a href="#" onclick="showTab('orders')"><span class="ico">📋</span>Orders</a>
@@ -92,40 +102,40 @@
 
   <script>
     const API = "https://script.google.com/macros/s/AKfycbxrUBjwsuj2Ne6lVPYo1jgS6pz4mKJUp1PPBB39nnhZNT0kx2g1ilWg3_JRe4zYoVLc/exec";
-    let role='guest', wa='', tripId='', trips=[], orders=[], items=[], payments=[], filterStatus='';
+    let role='guest', wa='', tripId='', password='', trips=[], orders=[], items=[], payments=[], filterStatus='';
     function fmt(n){return n==null?'-':'Rp '+Number(n).toLocaleString('id-ID');}
     function showTab(t){
       document.querySelectorAll('#app > div').forEach(el=>{if(el.id!=='loginPage' && !el.classList.contains('top') && !el.classList.contains('nav') && !el.classList.contains('fab')) el.classList.add('hidden')});
       document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('act'));
       if(t==='home'){document.getElementById('app').querySelectorAll('.card')[0].classList.remove('hidden');renderDashboard();}
       else if(t==='orders'){document.getElementById('ordersTable').closest('.card').classList.remove('hidden');renderOrders();}
-      else if(t==='scan'){alert('Fitur scan struk: kirim foto ke n8n/OCR, atau input manual ke form item');}
+      else if(t==='scan'){alert('Scan struk: kirim foto ke n8n/OCR');}
       else if(t==='trip'){document.getElementById('tripsList').closest('.card').classList.remove('hidden');renderTrips();}
       else if(t==='more'){document.getElementById('topCustomers').closest('.card').classList.remove('hidden');renderTop();}
     }
     function doLogin(){
-      const v=document.getElementById('k').value.trim();
-      fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'auth',key:v})})
+      password=document.getElementById('k').value.trim();
+      fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'auth',key:password})})
       .then(r=>r.json()).then(d=>{if(d.error){alert(d.error);return;}role=d.role;wa=d.wa||'';tripId=d.tripId||'';document.getElementById('loginPage').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadAll();});
     }
+    function logout(){location.reload();}
+    function scrollToForm(){const el=document.getElementById('fName'); if(el){el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'});}}
     async function loadAll(){await renderTrips();await renderDashboard();await renderOrders();}
     async function renderTrips(){
       const r=await fetch(API); const j=await r.json(); trips=j.trips||[];
       const sel=document.getElementById('tripSel'); let opts='';
       for(let i=0;i<trips.length;i++){const t=trips[i]; opts+='<option value="'+t.trip_id+'">'+t.trip_name+'</option>';}
-      sel.innerHTML=opts||'<option value="">-</option>'; if(tripId) sel.value=tripId;
+      const old=document.getElementById('tripSel'); if(old) old.innerHTML=opts||'<option value="">-</option>';
+      if(tripId && old) old.value=tripId;
     }
     async function renderDashboard(){
-      const tripFilter=document.getElementById('tripSel').value;
       const r=await fetch(API); const j=await r.json(); orders=j.orders||[]; items=j.items||[]; payments=j.payments||[];
-      const curOrders=tripFilter?orders.filter(o=>String(o.trip_id)==String(tripFilter)):orders;
-      const curItems=tripFilter?items.filter(i=>String(i.trip_id)==String(tripFilter)):items;
-      document.getElementById('kpiOrders').textContent=curOrders.length;
-      document.getElementById('kpiRevenue').textContent=fmt(curOrders.reduce((a,b)=>a+Number(b.dp_paid_idr||0),0));
-      document.getElementById('kpiCost').textContent=fmt(curItems.reduce((a,b)=>a+Number(b.price_cost_idr||0),0));
-      document.getElementById('kpiOut').textContent=curOrders.filter(o=>o.payment_status==='Unpaid').length;
-      document.getElementById('kpiPaid').textContent=curOrders.filter(o=>o.payment_status==='Paid').length;
-      renderTop(curOrders);
+      document.getElementById('kpiOrders').textContent=orders.length;
+      document.getElementById('kpiRevenue').textContent=fmt(orders.reduce((a,b)=>a+Number(b.dp_paid_idr||0),0));
+      document.getElementById('kpiCost').textContent=fmt(items.reduce((a,b)=>a+Number(b.price_cost_idr||0),0));
+      document.getElementById('kpiOut').textContent=orders.filter(o=>o.payment_status==='Unpaid').length;
+      document.getElementById('kpiPaid').textContent=orders.filter(o=>o.payment_status==='Paid').length;
+      renderTop(orders);
     }
     function renderTop(curOrders){
       const m={}; const src=curOrders||orders; for(let i=0;i<src.length;i++){const k=safe(src[i].customer_name||'?'); m[k]=(m[k]||0)+1;}
@@ -136,16 +146,24 @@
     function renderOrders(){
       const r=await fetch(API); const j=await r.json(); orders=j.orders||[];
       const filtered=filterStatus?orders.filter(o=>o.payment_status===filterStatus):orders;
-      let tbody=''; for(let i=0;i<Math.min(filtered.length,25);i++){const o=filtered[i]; tbody+='<tr><td>'+o.order_id+'</td><td>'+safe(o.customer_name)+'</td><td>'+safe(o.customer_wa)+'</td><td class="total">'+fmt(o.dp_paid_idr)+'</td><td><span class="badge '+String(o.payment_status||'').toLowerCase()+'">'+o.payment_status+'</span></td><td><a href="https://wa.me/'+safe(o.customer_wa).replace(/\D/g,'')+'" target="_blank">WA</a></td></tr>';}
+      let tbody=''; for(let i=0;i<Math.min(filtered.length,50);i++){const o=filtered[i]; tbody+='<tr><td>'+o.order_id+'</td><td>'+safe(o.customer_name)+'</td><td>'+safe(o.customer_wa)+'</td><td class="total">'+fmt(o.dp_paid_idr)+'</td><td><span class="badge '+String(o.payment_status||'').toLowerCase()+'">'+o.payment_status+'</span></td><td><a href="https://wa.me/'+safe(o.customer_wa).replace(/\D/g,'')+'" target="_blank">WA</a></td></tr>';}
       document.getElementById('ordersTable').innerHTML=tbody||'<tr><td colspan="6">Belum ada orders</td></tr>';
     }
     function setFilter(st){filterStatus=filterStatus===st?'':st;renderFilterChips();renderOrders();}
     function renderFilterChips(){
       const chips=[['Unpaid','Unpaid'],['Paid','Paid'],['DP','Partial/DP'],['Menunggu','menunggu']];
       let html=''; for(let i=0;i<chips.length;i++){const c=chips[i]; html+='<button class="chip '+(filterStatus===c[1]?'act':'')+'" onclick="setFilter(\''+c[1]+'\')">'+c[0]+'</button>';}
-      document.getElementById('filterChips').innerHTML=html;
+      if(document.getElementById('filterChips')) document.getElementById('filterChips').innerHTML=html;
     }
-    function openFab(){alert('FAB: +Order / +Item / +Payment (akan dihubungkan ke n8n automation)');}
+    async function createOrder(){
+      const body={type:'order-create',trip_id:document.getElementById('fTrip').value||'1',customer_name:document.getElementById('fName').value,customer_wa:document.getElementById('fWa').value,dp_paid_idr:Number(document.getElementById('fDp').value||0),payment_status:Number(document.getElementById('fDp').value||0)>0?'Partial/DP':'Unpaid',status:'menunggu',notes:document.getElementById('fNotes').value};
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
+      if(j.error){alert(j.error);return;}
+      alert('Order saved #'+j.order_id);
+      document.getElementById('fName').value=''; document.getElementById('fWa').value=''; document.getElementById('fDp').value=''; document.getElementById('fNotes').value='';
+      renderOrders(); renderDashboard();
+    }
+    function openFab(){alert('Fitur lanjutan: +Item / +Payment / Invoice WA (connect ke n8n)');}
     function safe(v){return v==null?'':String(v);}
   </script>
 </body>
