@@ -1,76 +1,15 @@
-// === Jastip Business Tracker — Apps Script API ===
-// Deploy: Anyone, Execute as Me
-// Frontend: GitHub Pages (index.html)
-// Sheet: 105hC8dryir_u2N7PEUvDmfR7JpS2PRg4Nn3kv13vPXQ
-
-const SS_ID = "105hC8dryir_u2N7PEUvDmfR7JpS2PRg4Nn3kv13vPXQ";
-const SS = SpreadsheetApp.openById(SS_ID);
-const S = {
-  trips: SS.getSheetByName("Trips"),
-  orders: SS.getSheetByName("Orders"),
-  items: SS.getSheetByName("Items"),
-  payments: SS.getSheetByName("Payments"),
-  admins: SS.getSheetByName("Admins"),
-};
-const RATE_URL = "https://open.er-api.com/v6/latest/USD";
-
-function getRate(code) {
-  try {
-    const r = UrlFetchApp.fetch(RATE_URL, { muteHttpExceptions: true });
-    const d = JSON.parse(r.getContentText());
-    const usd = d.rates[code], idr = d.rates.IDR;
-    return usd && idr ? idr / usd : null;
-  } catch (e) { return null; }
-}
-
-function rows(sheet) {
-  if (!sheet) return [];
-  const r = sheet.getDataRange().getValues();
-  if (r.length < 2) return [];
-  const h = r[0]; const out = [];
-  for (let i = 1; i < r.length; i++) { const o = {}; for (let j = 0; j < h.length; j++) o[h[j]] = r[i][j]; out.push(o); }
-  return out;
-}
-
-function nextId(sheet) {
-  const v = sheet.getRange("A2:A" + sheet.getLastRow()).getValues();
-  let mx = 0;
-  for (let i = 0; i < v.length; i++) if (Number(v[i][0]) > mx) mx = Number(v[i][0]);
-  return mx + 1;
-}
-
-function safe(v) { return v == null ? "" : v; }
-function now() { return new Date().toISOString(); }
-function findOrderById(id) { return rows(S.orders).find(o => String(o.order_id) == String(id)); }
-function findOrderByWa(wa) { return rows(S.orders).find(o => String(o.customer_wa) == String(wa)); }
-
-function cors(obj) {
-  const out = ContentService.createTextOutput(JSON.stringify(obj));
-  out.setMimeType(ContentService.MimeType.JSON);
-  out.setHeader('Access-Control-Allow-Origin', '*');
-  out.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  out.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  return out;
-}
-
-function isAdmin(p) { return p === "titiport123"; }
-
 function doGet(e) {
-  const action = e && e.parameter && e.parameter.action ? e.parameter.action : "view";
-  if (action === "api-info") return cors({ message: "Jastip Tracker API", endpoints: ["GET /exec?action=api-info|trips|orders|items|payments", "POST /exec type=auth|trip-create|order-create|item-create|payment-add|wa-invoice"] });
-  if (action === "trips") return cors({ trips: rows(S.trips) });
-  if (action === "orders") return cors({ orders: rows(S.orders) });
-  if (action === "items") return cors({ items: rows(S.items) });
-  if (action === "payments") return cors({ payments: rows(S.payments) });
+  const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "api-info";
+  const paths = {
+    trips: rows(S.trips), orders: rows(S.orders), items: rows(S.items), payments: rows(S.payments)
+  };
+  if (action === "api-info") return cors({ message: "Jastip Tracker API", endpoints: ["GET /exec?action=trips|orders|items|payments", "POST /exec type=auth|trip-create|order-create|item-create|payment-add|wa-invoice"] });
+  if (paths[action]) return cors({ [action === "trip" ? "trips" : action === "order" ? "orders" : action === "item" ? "items" : "payments"]: paths[action] });
   return cors({ ok: false, error: "unknown action" });
 }
 
 function doPost(e) {
-  try {
-    var body = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return cors({ ok: false, error: "invalid json" });
-  }
+  try { var body = JSON.parse(e.postData.contents); } catch (err) { return cors({ ok: false, error: "invalid json" }); }
 
   if (body.type === "auth") {
     if (body.key === "titiport123") return cors({ role: "admin" });
@@ -87,7 +26,7 @@ function doPost(e) {
   if (body.type === "payments") return cors({ payments: rows(S.payments) });
 
   if (body.type === "trip-create") {
-    if (!isAdmin(body.admin_password)) return cors({ ok: false, error: "forbidden" });
+    if (body.admin_password !== "titiport123") return cors({ ok: false, error: "forbidden" });
     var id = nextId(S.trips);
     S.trips.appendRow([id, body.trip_name, body.country, body.currency_code, getRate(body.currency_code) || "", body.execution_rate || "", "active", now()]);
     return cors({ trip_id: id });
@@ -128,6 +67,16 @@ function doPost(e) {
   return cors({ ok: false, error: "unknown" });
 }
 
+function doPut(e) { return doPost(e); }
+
+function doDelete(e) { return cors({ ok: true }); }
+
 function doOptions(e) {
-  return cors({ ok: true });
+  var out = ContentService.createTextOutput(JSON.stringify({ ok: true }));
+  out.setMimeType(ContentService.MimeType.JSON);
+  out.setHeader("Access-Control-Allow-Origin", "*");
+  out.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  out.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  out.setHeader("Access-Control-Max-Age", "86400");
+  return out;
 }
