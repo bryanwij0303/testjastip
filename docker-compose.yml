@@ -1,0 +1,27 @@
+# Titiport Jastip — docker-compose.yml
+# Jalankan: docker compose up -d  (dari folder ini)
+# Web: http://localhost:5000  |  Admin: http://localhost:5000/admin
+# Default akun: Titiport / titiport123
+# Data persist: orders.db + rag.db di volume 'jastip_data'
+# WAHA (WhatsApp) harus jalan di host :3001 biar reminder WA aktif.
+#   Di Windows Docker Desktop, host.docker.internal = IP host otomatis.
+
+services:
+  jastip:
+    build: .
+    container_name: titiport-jastip
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_PATH=/app/data/orders.db
+      - RAG_DB_PATH=/app/data/rag.db
+      - WAHA_URL=http://host.docker.internal:3001
+      - WAHA_KEY=wa-secret-key
+    volumes:
+      - jastip_data:/app/data
+
+volumes:
+  jastip_data:
