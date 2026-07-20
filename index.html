@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Jastip Tracker</title>
+  <style>
+    *{box-sizing:border-box;font-family:Segoe UI,system-ui,sans-serif}
+    html,body{margin:0;padding:0;background:#0f1115;color:#e8eaed}
+    .app{max-width:480px;margin:0 auto;padding:12px 12px 80px 12px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .top h1{color:#ff7a45;font-size:18px;margin:0}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+    .kpi{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:14px;text-align:center}
+    .kpi .v{font-size:18px;font-weight:700;color:#ff7a45}
+    .kpi .l{font-size:11px;color:#9aa0a6;margin-top:4px}
+    .kpi.ok .v{color:#6bffb0}.kpi.warn .v{color:#ffce6b}
+    .card{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:12px;margin-bottom:12px}
+    .card h3{color:#ff7a45;margin:0 0 8px;font-size:14px}
+    select,input{width:100%;padding:10px;border-radius:9px;border:1px solid #2a2e36;background:#0f1115;color:#e8eaed;margin:4px 0}
+    .btn{width:100%;padding:12px;border:none;border-radius:9px;background:#ff7a45;color:#fff;font-weight:600;margin-top:8px}
+    .btn2{background:#2a2e36;color:#e8eaed}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{padding:7px 5px;text-align:left;border-bottom:1px solid #2a2e36;color:#e8eaed}
+    .total{color:#ff7a45;font-weight:700}
+    .login{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:24px;max-width:360px;margin:40px auto;text-align:center}
+    .hidden{display:none}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:#13161c;border-top:1px solid #2a2e36;display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:9}
+    .nav a{color:#9aa0a6;text-decoration:none;font-size:11px;text-align:center;flex:1}
+    .nav a.act{color:#ff7a45}.nav .ico{font-size:18px;display:block}
+    .fab{position:fixed;right:14px;bottom:70px;background:#ff7a45;color:#fff;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px #0005;z-index:9}
+    .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+    .chip{background:#0f1115;border:1px solid #2a2e36;border-radius:20px;padding:6px 10px;font-size:12px;white-space:nowrap}
+    .chip.act{background:#ff7a45;color:#fff;border-color:#ff7a45}
+    .badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+    .menunggu{background:#3a2f12;color:#ffce6b}.diproses{background:#10324a;color:#6bb8ff}.dikirim{background:#103a2a;color:#6bffb0}.bayar{background:#3a1212;color:#ff8b8b}.batal{background:#2a2a2a;color:#888}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="loginPage" class="login">
+      <h2 style="color:#ff7a45">Jastip Tracker</h2>
+      <p style="font-size:12px;color:#9aa0a6">Admin: titiport123 | Tamu: nomor WA / Order ID</p>
+      <input id="k" placeholder="Password / WA / Order ID" />
+      <button class="btn" onclick="doLogin()">Masuk</button>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="top">
+        <h1>Jastip Tracker</h1>
+        <select id="tripSel" onchange="renderDashboard()"></select>
+      </div>
+
+      <div class="grid">
+        <div class="kpi"><div class="v" id="kpiOrders">0</div><div class="l">Order</div></div>
+        <div class="kpi"><div class="v" id="kpiRevenue">-</div><div class="l">Revenue</div></div>
+        <div class="kpi ok"><div class="v" id="kpiCost">-</div><div class="l">Modal</div></div>
+        <div class="kpi warn"><div class="v" id="kpiOut">0</div><div class="l">Outstanding</div></div>
+        <div class="kpi ok"><div class="v" id="kpiPaid">0</div><div class="l">Lunas</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Top Customers</h3>
+        <div id="topCustomers"></div>
+      </div>
+
+      <div class="card">
+        <h3>Filter Orders</h3>
+        <div class="chips" id="filterChips"></div>
+        <div style="margin-top:8px;overflow-x:auto">
+          <table><tr><th>ID</th><th>Customer</th><th>WA</th><th>Total</th><th>Status</th><th>Aksi</th></tr>
+          <tbody id="ordersTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Trips</h3>
+        <div id="tripsList"></div>
+      </div>
+
+      <button class="fab" onclick="openFab()">+</button>
+      <div class="nav">
+        <a href="#" class="act" onclick="showTab('home')"><span class="ico">🏠</span>Home</a>
+        <a href="#" onclick="showTab('orders')"><span class="ico">📋</span>Orders</a>
+        <a href="#" onclick="showTab('scan')"><span class="ico">📷</span>Scan</a>
+        <a href="#" onclick="showTab('trip')"><span class="ico">🧳</span>Trip</a>
+        <a href="#" onclick="showTab('more')"><span class="ico">⋯</span>More</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "https://script.google.com/macros/s/AKfycbxrUBjwsuj2Ne6lVPYo1jgS6pz4mKJUp1PPBB39nnhZNT0kx2g1ilWg3_JRe4zYoVLc/exec";
+    let role='guest', wa='', tripId='', trips=[], orders=[], items=[], payments=[], filterStatus='';
+    function fmt(n){return n==null?'-':'Rp '+Number(n).toLocaleString('id-ID');}
+    function showTab(t){
+      document.querySelectorAll('#app > div').forEach(el=>{if(el.id!=='loginPage' && !el.classList.contains('top') && !el.classList.contains('nav') && !el.classList.contains('fab')) el.classList.add('hidden')});
+      document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('act'));
+      if(t==='home'){document.getElementById('app').querySelectorAll('.card')[0].classList.remove('hidden');renderDashboard();}
+      else if(t==='orders'){document.getElementById('ordersTable').closest('.card').classList.remove('hidden');renderOrders();}
+      else if(t==='scan'){alert('Fitur scan struk: kirim foto ke n8n/OCR, atau input manual ke form item');}
+      else if(t==='trip'){document.getElementById('tripsList').closest('.card').classList.remove('hidden');renderTrips();}
+      else if(t==='more'){document.getElementById('topCustomers').closest('.card').classList.remove('hidden');renderTop();}
+    }
+    function doLogin(){
+      const v=document.getElementById('k').value.trim();
+      fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'auth',key:v})})
+      .then(r=>r.json()).then(d=>{if(d.error){alert(d.error);return;}role=d.role;wa=d.wa||'';tripId=d.tripId||'';document.getElementById('loginPage').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadAll();});
+    }
+    async function loadAll(){await renderTrips();await renderDashboard();await renderOrders();}
+    async function renderTrips(){
+      const r=await fetch(API); const j=await r.json(); trips=j.trips||[];
+      const sel=document.getElementById('tripSel'); let opts='';
+      for(let i=0;i<trips.length;i++){const t=trips[i]; opts+='<option value="'+t.trip_id+'">'+t.trip_name+'</option>';}
+      sel.innerHTML=opts||'<option value="">-</option>'; if(tripId) sel.value=tripId;
+    }
+    async function renderDashboard(){
+      const tripFilter=document.getElementById('tripSel').value;
+      const r=await fetch(API); const j=await r.json(); orders=j.orders||[]; items=j.items||[]; payments=j.payments||[];
+      const curOrders=tripFilter?orders.filter(o=>String(o.trip_id)==String(tripFilter)):orders;
+      const curItems=tripFilter?items.filter(i=>String(i.trip_id)==String(tripFilter)):items;
+      document.getElementById('kpiOrders').textContent=curOrders.length;
+      document.getElementById('kpiRevenue').textContent=fmt(curOrders.reduce((a,b)=>a+Number(b.dp_paid_idr||0),0));
+      document.getElementById('kpiCost').textContent=fmt(curItems.reduce((a,b)=>a+Number(b.price_cost_idr||0),0));
+      document.getElementById('kpiOut').textContent=curOrders.filter(o=>o.payment_status==='Unpaid').length;
+      document.getElementById('kpiPaid').textContent=curOrders.filter(o=>o.payment_status==='Paid').length;
+      renderTop(curOrders);
+    }
+    function renderTop(curOrders){
+      const m={}; const src=curOrders||orders; for(let i=0;i<src.length;i++){const k=safe(src[i].customer_name||'?'); m[k]=(m[k]||0)+1;}
+      const arr=Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      let rows=''; for(let i=0;i<arr.length;i++) rows+='<tr><td>'+safe(arr[i][0])+'</td><td>'+arr[i][1]+'</td></tr>';
+      document.getElementById('topCustomers').innerHTML=rows?'<table><tr><th>Customer</th><th>Orders</th></tr>'+rows+'</table>':'<i>Belum ada data</i>';
+    }
+    function renderOrders(){
+      const r=await fetch(API); const j=await r.json(); orders=j.orders||[];
+      const filtered=filterStatus?orders.filter(o=>o.payment_status===filterStatus):orders;
+      let tbody=''; for(let i=0;i<Math.min(filtered.length,25);i++){const o=filtered[i]; tbody+='<tr><td>'+o.order_id+'</td><td>'+safe(o.customer_name)+'</td><td>'+safe(o.customer_wa)+'</td><td class="total">'+fmt(o.dp_paid_idr)+'</td><td><span class="badge '+String(o.payment_status||'').toLowerCase()+'">'+o.payment_status+'</span></td><td><a href="https://wa.me/'+safe(o.customer_wa).replace(/\D/g,'')+'" target="_blank">WA</a></td></tr>';}
+      document.getElementById('ordersTable').innerHTML=tbody||'<tr><td colspan="6">Belum ada orders</td></tr>';
+    }
+    function setFilter(st){filterStatus=filterStatus===st?'':st;renderFilterChips();renderOrders();}
+    function renderFilterChips(){
+      const chips=[['Unpaid','Unpaid'],['Paid','Paid'],['DP','Partial/DP'],['Menunggu','menunggu']];
+      let html=''; for(let i=0;i<chips.length;i++){const c=chips[i]; html+='<button class="chip '+(filterStatus===c[1]?'act':'')+'" onclick="setFilter(\''+c[1]+'\')">'+c[0]+'</button>';}
+      document.getElementById('filterChips').innerHTML=html;
+    }
+    function openFab(){alert('FAB: +Order / +Item / +Payment (akan dihubungkan ke n8n automation)');}
+    function safe(v){return v==null?'':String(v);}
+  </script>
+</body>
+</html>
