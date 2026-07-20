@@ -1,170 +1,370 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>Jastip Tracker</title>
-  <style>
-    *{box-sizing:border-box;font-family:Segoe UI,system-ui,sans-serif}
-    html,body{margin:0;padding:0;background:#0f1115;color:#e8eaed}
-    .app{max-width:480px;margin:0 auto;padding:12px 12px 86px 12px}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-    .top h1{color:#ff7a45;font-size:18px;margin:0}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
-    .kpi{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:14px;text-align:center}
-    .kpi .v{font-size:18px;font-weight:700;color:#ff7a45}
-    .kpi .l{font-size:11px;color:#9aa0a6;margin-top:4px}
-    .kpi.ok .v{color:#6bffb0}.kpi.warn .v{color:#ffce6b}
-    .card{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:12px;margin-bottom:12px}
-    .card h3{color:#ff7a45;margin:0 0 8px;font-size:14px}
-    input,select,textarea{width:100%;padding:10px;border-radius:9px;border:1px solid #2a2e36;background:#0f1115;color:#e8eaed;margin:4px 0}
-    .btn{width:100%;padding:12px;border:none;border-radius:9px;background:#ff7a45;color:#fff;font-weight:600;margin-top:8px}
-    .btn2{background:#2a2e36;color:#e8eaed}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{padding:7px 5px;text-align:left;border-bottom:1px solid #2a2e36;color:#e8eaed}
-    .total{color:#ff7a45;font-weight:700}
-    .login{background:#1a1d23;border:1px solid #2a2e36;border-radius:14px;padding:24px;max-width:360px;margin:40px auto;text-align:center}
-    .hidden{display:none}
-    .nav{position:fixed;bottom:0;left:0;right:0;background:#13161c;border-top:1px solid #2a2e36;display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:9}
-    .nav a{color:#9aa0a6;text-decoration:none;font-size:11px;text-align:center;flex:1}
-    .nav a.act{color:#ff7a45}.nav .ico{font-size:18px;display:block}
-    .fab{position:fixed;right:14px;bottom:70px;background:#ff7a45;color:#fff;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px #0005;z-index:9}
-    .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
-    .chip{background:#0f1115;border:1px solid #2a2e36;border-radius:20px;padding:6px 10px;font-size:12px;white-space:nowrap}
-    .chip.act{background:#ff7a45;color:#fff;border-color:#ff7a45}
-    .badge{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
-    .menunggu{background:#3a2f12;color:#ffce6b}.diproses{background:#10324a;color:#6bb8ff}.dikirim{background:#103a2a;color:#6bffb0}.bayar{background:#3a1212;color:#ff8b8b}.batal{background:#2a2a2a;color:#888}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Jastip Tracker</title>
+<style>
+  /* === Design Tokens === */
+  :root{
+    --bg:#0B0C0E;
+    --bg-2:#13161C;
+    --bg-3:#1A1D23;
+    --border:#252A32;
+    --border-2:#313742;
+    --text:#E8EAED;
+    --muted:#9AA0A6;
+    --accent:#FF7A45;
+    --accent-2:#FF935F;
+    --ok:#6BFFB0;
+    --warn:#FFCE6B;
+    --bad:#FF8B8B;
+    --info:#6BB8FF;
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  /* === Reset === */
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    background: radial-gradient(1200px 800px at 10% -10%,rgba(255,122,69,.08),transparent),
+                radial-gradient(800px 600px at 110% 10%,rgba(107,184,255,.06),transparent),
+                var(--bg);
+    color:var(--text);
+    font-family:var(--font);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+    min-height:100vh;
+  }
+
+  /* === Layout === */
+  .wrap{max-width:520px;margin:0 auto;padding:16px 14px 88px}
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:8px 4px 14px;
+  }
+  header h1{font-size:18px;font-weight:700;letter-spacing:-.2px}
+  header .pill{
+    font-size:11px;color:var(--muted);background:var(--bg-3);padding:6px 12px;
+    border:1px solid var(--border);border-radius:999px;
+  }
+
+  /* === KPI Grid === */
+  .kpi-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;
+  }
+  .kpi{
+    background:linear-gradient(180deg,var(--bg-3),rgba(26,29,35,.6));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;position:relative;overflow:hidden;
+  }
+  .kpi .l{font-size:11px;color:var(--muted);letter-spacing:.3px;text-transform:uppercase}
+  .kpi .v{font-size:22px;font-weight:800;margin-top:4px;letter-spacing:-.4px}
+  .kpi.ok .v{color:var(--ok)} .kpi.warn .v{color:var(--warn)} .kpi.neutral .v{color:var(--info)}
+  .kpi::after{
+    content:"";position:absolute;inset:0;opacity:.25;pointer-events:none;
+    background:radial-gradient(300px 100px at 0% 0%,var(--accent),transparent);
+  }
+
+  /* === Cards === */
+  .card{
+    background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px;
+    box-shadow:0 1px 0 rgba(255,255,255,.04) inset, var(--shadow);
+  }
+  .card h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+
+  /* === Tables === */
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{
+    text-align:left;font-weight:600;color:var(--muted);font-size:11px;
+    padding:8px 6px;border-bottom:1px solid var(--border);
+  }
+  td{padding:9px 6px;border-bottom:1px solid var(--border);color:var(--text)}
+  tr:last-child td{border-bottom:none}
+  .num{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700}
+  .link{color:var(--info);text-decoration:none}
+
+  /* === Status badges === */
+  .badge{
+    display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;
+    border:1px solid transparent;
+  }
+  .paid{background:rgba(107,255,176,.12);color:#9Bffd0;border-color:rgba(107,255,176,.2)}
+  .unpaid{background:rgba(255,140,140,.12);color:#ffbaba;border-color:rgba(255,140,140,.2)}
+  .menunggu{background:rgba(255,206,107,.12);color:#ffe299;border-color:rgba(255,206,107,.2)}
+  .diproses{background:rgba(107,184,255,.12);color:#b9dfff;border-color:rgba(107,184,255,.2)}
+  .dikirim{background:rgba(107,255,176,.12);color:#b9ffd6;border-color:rgba(107,255,176,.2)}
+  .batal{background:rgba(255,255,255,.06);color:#9AA0A6;border-color:rgba(255,255,255,.1)}
+  .partial{background:rgba(255,122,69,.12);color:#ffb899;border-color:rgba(255,122,69,.2)}
+
+  /* === Forms === */
+  label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+  input,select,textarea{
+    width:100%;padding:11px 12px;border-radius:var(--radius-sm);
+    border:1px solid var(--border);background:var(--bg-2);color:var(--text);
+    font:inherit;font-size:14px;outline:none;transition:.15s border-color,.15s box-shadow;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,122,69,.15)}
+  textarea{min-height:80px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* === Buttons === */
+  .btn{
+    width:100%;padding:13px;border:none;border-radius:var(--radius-sm);
+    background:linear-gradient(180deg,var(--accent),#e8682e);color:#fff;
+    font-weight:700;font-size:14px;cursor:pointer;margin-top:10px;
+    transition:transform .05s ease, filter .2s;
+  }
+  .btn:active{transform:translateY(1px);filter:brightness(.95)}
+  .btn-secondary{background:var(--bg-3);color:var(--text);border:1px solid var(--border)}
+
+  /* === Login === */
+  .login{
+    background:linear-gradient(180deg,var(--bg-3),rgba(26,29,35,.6));
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:28px 22px;max-width:380px;margin:64px auto;text-align:center;
+    box-shadow:var(--shadow);
+  }
+  .login h2{font-size:22px;color:var(--accent);margin-bottom:6px}
+  .login p{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+  /* === Bottom nav === */
+  .nav{
+    position:fixed;bottom:0;left:0;right:0;background:rgba(19,22,28,.85);
+    backdrop-filter:saturate(140%) blur(12px);
+    border-top:1px solid var(--border);
+    display:flex;justify-content:space-around;padding:10px 0;
+    padding-bottom:max(10px,env(safe-area-inset-bottom));z-index:20;
+  }
+  .nav a{
+    color:var(--muted);text-decoration:none;font-size:11px;font-weight:600;
+    text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  .nav a .ic{font-size:20px;line-height:1}
+  .nav a.act{color:var(--accent)}
+
+  /* === FAB === */
+  .fab{
+    position:fixed;right:14px;bottom:68px;width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(180deg,var(--accent),#e8682e);color:#fff;border:none;
+    font-size:26px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 22px rgba(255,122,69,.35);z-index:19;cursor:pointer;
+  }
+
+  /* === Chips === */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+  .chip{
+    background:var(--bg-2);border:1px solid var(--border);border-radius:999px;
+    padding:6px 12px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer;
+    transition:.15s background,.15s color,.15s border-color;
+  }
+  .chip.act{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* === Utilities === */
+  .hidden{display:none!important}
+  .mt10{margin-top:10px}
+  .muted{color:var(--muted);font-size:12px}
+</style>
 </head>
 <body>
-  <div class="app">
+  <div class="wrap">
     <div id="loginPage" class="login">
-      <h2 style="color:#ff7a45">Jastip Tracker</h2>
-      <p style="font-size:12px;color:#9aa0a6">Admin: titiport123 | Tamu: nomor WA / Order ID</p>
-      <input id="k" placeholder="Password / WA / Order ID" />
+      <h2>Jastip Tracker</h2>
+      <p>Masuk sebagai Admin atau Tamu</p>
+      <input id="k" placeholder="Password / nomor WA / Order ID" />
       <button class="btn" onclick="doLogin()">Masuk</button>
+      <p class="muted mt10">Admin: titiport123 · Tamu: WA / Order ID</p>
     </div>
 
     <div id="app" class="hidden">
-      <div class="top">
+      <header>
         <h1>Jastip Tracker</h1>
-        <button class="btn2" style="width:auto;padding:8px 12px;border-radius:9px" onclick="logout()">Logout</button>
-      </div>
+        <div class="pill" id="rolePill">Admin</div>
+      </header>
 
-      <div class="grid">
-        <div class="kpi"><div class="v" id="kpiOrders">0</div><div class="l">Order</div></div>
-        <div class="kpi"><div class="v" id="kpiRevenue">-</div><div class="l">Revenue</div></div>
-        <div class="kpi ok"><div class="v" id="kpiCost">-</div><div class="l">Modal</div></div>
-        <div class="kpi warn"><div class="v" id="kpiOut">0</div><div class="l">Outstanding</div></div>
-        <div class="kpi ok"><div class="v" id="kpiPaid">0</div><div class="l">Lunas</div></div>
-      </div>
-
-      <div class="card">
-        <h3>Top Customers</h3>
-        <div id="topCustomers"></div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="l">Order</div><div class="v" id="kpiOrders">-</div></div>
+        <div class="kpi neutral"><div class="l">Revenue</div><div class="v" id="kpiRevenue">-</div></div>
+        <div class="kpi ok"><div class="l">Modal</div><div class="v" id="kpiCost">-</div></div>
+        <div class="kpi warn"><div class="l">Outstanding</div><div class="v" id="kpiOut">-</div></div>
       </div>
 
       <div class="card">
-        <h3>Tambah Order Manual</h3>
-        <input id="fName" placeholder="Customer name" />
-        <input id="fWa" placeholder="WA, contoh 62812xxxx" />
-        <input id="fTrip" placeholder="Trip ID, contoh 1" />
-        <input id="fDp" placeholder="DP IDR" />
-        <textarea id="fNotes" placeholder="Notes / item"></textarea>
-        <button class="btn" onclick="createOrder()">Simpan Order</button>
+        <h3>Customers teratas</h3>
+        <table>
+          <thead><tr><th>Customer</th><th style="text-align:right">Orders</th></tr></thead>
+          <tbody id="topCustomers"><tr><td colspan="2" class="muted">Belum ada data</td></tr></tbody>
+        </table>
       </div>
 
       <div class="card">
-        <h3>Filter Orders</h3>
+        <h3>Orders</h3>
         <div class="chips" id="filterChips"></div>
         <div style="margin-top:8px;overflow-x:auto">
-          <table><tr><th>ID</th><th>Customer</th><th>WA</th><th>Total</th><th>Status</th><th>Aksi</th></tr>
-          <tbody id="ordersTable"></tbody>
+          <table>
+            <thead><tr><th>ID</th><th>Customer</th><th>WA</th><th style="text-align:right">Total</th><th>Status</th><th></th></tr></thead>
+            <tbody id="ordersTable"><tr><td colspan="6" class="muted">Belum ada orders</td></tr></tbody>
           </table>
         </div>
       </div>
 
       <div class="card">
-        <h3>Trips</h3>
-        <div id="tripsList"></div>
-      </div>
-
-      <button class="fab" onclick="scrollToForm()">+</button>
-      <div class="nav">
-        <a href="#" class="act" onclick="showTab('home')"><span class="ico">🏠</span>Home</a>
-        <a href="#" onclick="showTab('orders')"><span class="ico">📋</span>Orders</a>
-        <a href="#" onclick="showTab('scan')"><span class="ico">📷</span>Scan</a>
-        <a href="#" onclick="showTab('trip')"><span class="ico">🧳</span>Trip</a>
-        <a href="#" onclick="showTab('more')"><span class="ico">⋯</span>More</a>
+        <h3>Buat Order</h3>
+        <label>Customer</label>
+        <input id="fName" placeholder="Nama customer" />
+        <div class="row">
+          <div>
+            <label>WhatsApp</label>
+            <input id="fWa" placeholder="62812xxxx" />
+          </div>
+          <div>
+            <label>Trip ID</label>
+            <input id="fTrip" placeholder="1" />
+          </div>
+        </div>
+        <label>DP (IDR)</label>
+        <input id="fDp" placeholder="0" />
+        <label>Catatan / item</label>
+        <textarea id="fNotes" placeholder="Contoh: sepatu size 42"></textarea>
+        <button class="btn" onclick="createOrder()">Simpan Order</button>
       </div>
     </div>
   </div>
 
-  <script>
-    const API = "https://bacterial-implied-content-joint.trycloudflare.com/webhook/jastip-api";
-    let role='guest', wa='', tripId='', password='', trips=[], orders=[], items=[], payments=[], filterStatus='';
-    function fmt(n){return n==null?'-':'Rp '+Number(n).toLocaleString('id-ID');}
-    function showTab(t){
-      document.querySelectorAll('#app > div').forEach(el=>{if(el.id!=='loginPage' && !el.classList.contains('top') && !el.classList.contains('nav') && !el.classList.contains('fab')) el.classList.add('hidden')});
-      document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('act'));
-      if(t==='home'){document.getElementById('app').querySelectorAll('.card')[0].classList.remove('hidden');renderDashboard();}
-      else if(t==='orders'){document.getElementById('ordersTable').closest('.card').classList.remove('hidden');renderOrders();}
-      else if(t==='scan'){alert('Scan struk: kirim foto ke n8n/OCR');}
-      else if(t==='trip'){document.getElementById('tripsList').closest('.card').classList.remove('hidden');renderTrips();}
-      else if(t==='more'){document.getElementById('topCustomers').closest('.card').classList.remove('hidden');renderTop();}
-    }
-    function doLogin(){
-      password=document.getElementById('k').value.trim();
-      fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'auth',key:password})})
-      .then(r=>r.json()).then(d=>{if(d.error){alert(d.error);return;}role=d.role;wa=d.wa||'';tripId=d.tripId||'';document.getElementById('loginPage').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadAll();});
-    }
-    function logout(){location.reload();}
-    function scrollToForm(){const el=document.getElementById('fName'); if(el){el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'});}}
-    async function loadAll(){await renderTrips();await renderDashboard();await renderOrders();}
-    async function renderTrips(){
-      const r=await fetch(API); const j=await r.json(); trips=j.trips||[];
-      const sel=document.getElementById('tripSel'); let opts='';
-      for(let i=0;i<trips.length;i++){const t=trips[i]; opts+='<option value="'+t.trip_id+'">'+t.trip_name+'</option>';}
-      const old=document.getElementById('tripSel'); if(old) old.innerHTML=opts||'<option value="">-</option>';
-      if(tripId && old) old.value=tripId;
-    }
-    async function renderDashboard(){
-      const r=await fetch(API); const j=await r.json(); orders=j.orders||[]; items=j.items||[]; payments=j.payments||[];
-      document.getElementById('kpiOrders').textContent=orders.length;
-      document.getElementById('kpiRevenue').textContent=fmt(orders.reduce((a,b)=>a+Number(b.dp_paid_idr||0),0));
-      document.getElementById('kpiCost').textContent=fmt(items.reduce((a,b)=>a+Number(b.price_cost_idr||0),0));
-      document.getElementById('kpiOut').textContent=orders.filter(o=>o.payment_status==='Unpaid').length;
-      document.getElementById('kpiPaid').textContent=orders.filter(o=>o.payment_status==='Paid').length;
-      renderTop(orders);
-    }
-    function renderTop(curOrders){
-      const m={}; const src=curOrders||orders; for(let i=0;i<src.length;i++){const k=safe(src[i].customer_name||'?'); m[k]=(m[k]||0)+1;}
-      const arr=Object.keys(m).map(k=>[k,m[k]]).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      let rows=''; for(let i=0;i<arr.length;i++) rows+='<tr><td>'+safe(arr[i][0])+'</td><td>'+arr[i][1]+'</td></tr>';
-      document.getElementById('topCustomers').innerHTML=rows?'<table><tr><th>Customer</th><th>Orders</th></tr>'+rows+'</table>':'<i>Belum ada data</i>';
-    }
-    function renderOrders(){
-      const r=await fetch(API); const j=await r.json(); orders=j.orders||[];
-      const filtered=filterStatus?orders.filter(o=>o.payment_status===filterStatus):orders;
-      let tbody=''; for(let i=0;i<Math.min(filtered.length,50);i++){const o=filtered[i]; tbody+='<tr><td>'+o.order_id+'</td><td>'+safe(o.customer_name)+'</td><td>'+safe(o.customer_wa)+'</td><td class="total">'+fmt(o.dp_paid_idr)+'</td><td><span class="badge '+String(o.payment_status||'').toLowerCase()+'">'+o.payment_status+'</span></td><td><a href="https://wa.me/'+safe(o.customer_wa).replace(/\D/g,'')+'" target="_blank">WA</a></td></tr>';}
-      document.getElementById('ordersTable').innerHTML=tbody||'<tr><td colspan="6">Belum ada orders</td></tr>';
-    }
-    function setFilter(st){filterStatus=filterStatus===st?'':st;renderFilterChips();renderOrders();}
-    function renderFilterChips(){
-      const chips=[['Unpaid','Unpaid'],['Paid','Paid'],['DP','Partial/DP'],['Menunggu','menunggu']];
-      let html=''; for(let i=0;i<chips.length;i++){const c=chips[i]; html+='<button class="chip '+(filterStatus===c[1]?'act':'')+'" onclick="setFilter(\''+c[1]+'\')">'+c[0]+'</button>';}
-      if(document.getElementById('filterChips')) document.getElementById('filterChips').innerHTML=html;
-    }
-    async function createOrder(){
-      const body={type:'order-create',trip_id:document.getElementById('fTrip').value||'1',customer_name:document.getElementById('fName').value,customer_wa:document.getElementById('fWa').value,dp_paid_idr:Number(document.getElementById('fDp').value||0),payment_status:Number(document.getElementById('fDp').value||0)>0?'Partial/DP':'Unpaid',status:'menunggu',notes:document.getElementById('fNotes').value};
-      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
-      if(j.error){alert(j.error);return;}
-      alert('Order saved #'+j.order_id);
-      document.getElementById('fName').value=''; document.getElementById('fWa').value=''; document.getElementById('fDp').value=''; document.getElementById('fNotes').value='';
-      renderOrders(); renderDashboard();
-    }
-    function openFab(){alert('Fitur lanjutan: +Item / +Payment / Invoice WA (connect ke n8n)');}
-    function safe(v){return v==null?'':String(v);}
-  </script>
+  <button class="fab" onclick="scrollToForm()">+</button>
+  <nav class="nav" id="mainNav">
+    <a href="#" class="act" onclick="showTab('home')"><span class="ic">🏠</span>Home</a>
+    <a href="#" onclick="showTab('orders')"><span class="ic">📋</span>Orders</a>
+    <a href="#" onclick="showTab('scan')"><span class="ic">📷</span>Scan</a>
+    <a href="#" onclick="showTab('trip')"><span class="ic">🧳</span>Trip</a>
+    <a href="#" onclick="showTab('profile')"><span class="ic">👤</span>Profile</a>
+  </nav>
+
+<script>
+const API = "https://bacterial-implied-content-joint.trycloudflare.com/webhook/jastip-api";
+let role='guest', wa='', tripId='', filterStatus='';
+
+function fmt(n){
+  if(n==null) return '-';
+  const v = Number(n);
+  if(!Number.isFinite(v)) return '-';
+  return 'Rp ' + v.toLocaleString('id-ID');
+}
+
+function showTab(t){
+  const cards = document.querySelectorAll('.card');
+  const navs = document.querySelectorAll('#mainNav a');
+  cards.forEach((el,i)=>{
+    if(i===0 && t==='home') el.classList.remove('hidden');
+    else if(i===1 && t==='orders') el.classList.remove('hidden');
+    else if(i===2 && t==='scan'){alert('Scan struk: sementara pakai input manual + kirim ke n8n untuk OCR'); return;}
+    else if(i===3 && t==='trip') el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+  navs.forEach(a=>a.classList.remove('act'));
+  const map={home:0,orders:1,scan:2,trip:3,profile:4};
+  if(navs[map[t]]) navs[map[t]].classList.add('act');
+  if(t==='home') renderDashboard();
+  if(t==='orders') renderOrders();
+  if(t==='trip') renderTrips();
+}
+
+function doLogin(){
+  const key=document.getElementById('k').value.trim();
+  if(!key) return alert('Isi password / WA');
+  fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'auth',key})})
+  .then(async r=>{ const j=await r.json(); if(!r.ok) throw j; return j; })
+  .then(d=>{
+    if(d.error) return alert(d.error);
+    role=d.role||'guest'; wa=d.wa||''; tripId=d.tripId||'';
+    if(role==='admin') document.getElementById('rolePill').textContent='Admin';
+    else document.getElementById('rolePill').textContent='Tamu';
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('mainNav').classList.remove('hidden');
+    renderDashboard(); renderOrders();
+  })
+  .catch(e=>alert('Auth error: '+JSON.stringify(e)));
+}
+
+async function renderDashboard(){
+  const j = await fetchData();
+  const orders = j.orders || [];
+  document.getElementById('kpiOrders').textContent = orders.length;
+  document.getElementById('kpiRevenue').textContent = fmt(orders.reduce((a,b)=>a+Number(b.dp_paid_idr||0),0));
+  document.getElementById('kpiCost').textContent = '-';
+  document.getElementById('kpiOut').textContent = orders.filter(o=>o.payment_status==='Unpaid').length;
+  renderTop(orders);
+}
+
+function renderTop(orders){
+  const m={};
+  orders.forEach(o=>{const k=o.customer_name||'?'; m[k]=(m[k]||0)+1;});
+  const arr=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const tb=document.getElementById('topCustomers');
+  if(!arr.length){ tb.innerHTML='<tr><td colspan="2" class="muted">Belum ada data</td></tr>'; return; }
+  tb.innerHTML=arr.map(([k,v])=>`<tr><td>${k}</td><td style="text-align:right;font-weight:700">${v}</td></tr>`).join('');
+}
+
+function renderOrders(){
+  const j = await fetchData();
+  const orders = j.orders || [];
+  const filtered = filterStatus ? orders.filter(o=>o.payment_status===filterStatus) : orders;
+  const tb = document.getElementById('ordersTable');
+  if(!filtered.length){ tb.innerHTML='<tr><td colspan="6" class="muted">Belum ada orders</td></tr>'; return; }
+  tb.innerHTML=filtered.slice(0,25).map(o=>`
+    <tr>
+      <td>${o.order_id}</td>
+      <td>${o.customer_name||''}</td>
+      <td><a class="link" href="https://wa.me/${String(o.customer_wa||'').replace(/\\D/g,'')}" target="_blank">${o.customer_wa||''}</a></td>
+      <td class="num">${fmt(o.dp_paid_idr)}</td>
+      <td><span class="badge ${String(o.payment_status||'').toLowerCase()}">${o.payment_status||'-'}</span></td>
+      <td></td>
+    </tr>
+  `).join('');
+}
+
+async function fetchData(){
+  const r=await fetch(API); return r.json();
+}
+
+function setFilter(st){filterStatus=filterStatus===st?'':st;renderFilterChips();renderOrders();}
+function renderFilterChips(){
+  const chips=[['Unpaid','Unpaid'],['Paid','Paid'],['DP','Partial/DP'],['Menunggu','menunggu']];
+  document.getElementById('filterChips').innerHTML=chips.map(([label,val])=>
+    `<button class="chip ${filterStatus===val?'act':''}" onclick="setFilter('${val}')">${label}</button>`
+  ).join('');
+}
+
+async function createOrder(){
+  const body={
+    type:'order-create',
+    trip_id: document.getElementById('fTrip').value||'1',
+    customer_name: document.getElementById('fName').value,
+    customer_wa: document.getElementById('fWa').value,
+    dp_paid_idr: Number(document.getElementById('fDp').value||0),
+    payment_status: Number(document.getElementById('fDp').value||0)>0?'Partial/DP':'Unpaid',
+    status:'menunggu',
+    notes: document.getElementById('fNotes').value
+  };
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(j.error){alert(j.error);return;}
+  alert('Order tersimpan #'+j.order_id);
+  document.getElementById('fName').value='';
+  document.getElementById('fWa').value='';
+  document.getElementById('fDp').value='';
+  document.getElementById('fNotes').value='';
+  renderOrders(); renderDashboard();
+}
+
+function scrollToForm(){const el=document.getElementById('fName'); el?.focus(); el?.scrollIntoView({behavior:'smooth',block:'center'});}
+
+// init filter chips
+renderFilterChips();
+</script>
 </body>
 </html>
