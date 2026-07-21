@@ -1,0 +1,6 @@
+{
+  "orders": [],
+  "trips": [
+    {"trip_id": 1, "trip_name": "China Taobao", "country": "CN", "currency_code": "CNY", "rate": 2200, "execution_rate": 1.0, "status": "active"}
+  ]
+}
