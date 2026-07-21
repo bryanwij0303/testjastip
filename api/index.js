@@ -25,6 +25,8 @@ module.exports = async (req, res) => {
   cors(req, res);
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
+  let body = {};
+  try { body = await req.json().catch(async () => { const t = await req.text(); try { return JSON.parse(t); } catch(e){ return {}; } }); } catch (e) { body = {}; }
 
   if (pathname === '/api/orders') {
     if (req.method === 'GET') return ok(res, readData());
