@@ -64,6 +64,14 @@ function doPost(e) {
     return cors({ ok: true, url: wa });
   }
 
+  if (body.type === "wa-incoming") {
+    var id = nextId(S.orders);
+    var trip = rows(S.trips).find(function(t) { return String(t.trip_id) == String(body.trip_id || 1); });
+    var notes = (body.item || "") + " | " + (body.notes || "");
+    S.orders.appendRow([id, body.trip_id || 1, body.customer_name || "", body.customer_wa || "", 0, "Unpaid", "menunggu", now(), notes]);
+    return cors({ ok: true, order_id: id });
+  }
+
   return cors({ ok: false, error: "unknown" });
 }
 
