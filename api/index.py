@@ -5,6 +5,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import app as application
+from vercel_wsgi import handler
 
-# Vercel expects a module-level `app` or `handler`
-app = application
+# Vercel serverless entrypoint
+app = handler(application)

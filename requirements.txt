@@ -2,3 +2,4 @@ flask==3.0.3
 fpdf2==2.8.7
 apscheduler==3.11.3
 requests==2.32.3
+vercel-wsgi==0.3.1
