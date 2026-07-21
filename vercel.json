@@ -1,16 +1,14 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/admin.js", "use": "@vercel/node" },
-    { "src": "api/orders.js", "use": "@vercel/node" },
-    { "src": "api/tracker.js", "use": "@vercel/node" },
+    { "src": "api/index.js", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "invoice.html", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/admin/:path*", "dest": "/api/admin.js" },
-    { "src": "/api/orders", "dest": "/api/orders.js" },
-    { "src": "/api/tracker", "dest": "/api/tracker.js" },
+    { "src": "/api/admin/:path*", "dest": "/api/index.js" },
+    { "src": "/api/orders", "dest": "/api/index.js" },
+    { "src": "/api/tracker", "dest": "/api/index.js" },
     { "src": "/invoice.html", "dest": "/invoice.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
