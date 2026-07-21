@@ -7,8 +7,9 @@
     { "src": "invoice.html", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/orders", "dest": "/api/orders.js" },
+    { "src": "/api/admin/(.*)", "dest": "/api/admin.js" },
     { "src": "/api/tracker", "dest": "/api/tracker.js" },
+    { "src": "/api/orders", "dest": "/api/orders.js" },
     { "src": "/invoice.html", "dest": "/invoice.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],

@@ -247,6 +247,7 @@
 <script>
 const API = "/api/orders";
 const API_TRACKER = "/api/tracker";
+const API_ADMIN = "/api/admin";
 let role='guest', wa='', tripId='', filterStatus='';
 
 function fmt(n){
@@ -277,7 +278,7 @@ function showTab(t){
 function doLogin(){
   const key=document.getElementById('k').value.trim();
   if(!key) return alert('Isi password / WA');
-  fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'auth',key})})
+  fetch(API_ADMIN+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:key})})
   .then(async r=>{ const j=await r.json(); if(!r.ok) throw j; return j; })
   .then(d=>{
     if(d.error) return alert(d.error);
@@ -296,9 +297,9 @@ async function renderDashboard(){
   const j = await fetchData();
   const orders = j.orders || [];
   document.getElementById('kpiOrders').textContent = orders.length;
-  document.getElementById('kpiRevenue').textContent = fmt(orders.reduce((a,b)=>a+Number(b.dp_paid_idr||0),0));
-  document.getElementById('kpiCost').textContent = '-';
-  document.getElementById('kpiOut').textContent = orders.filter(o=>o.payment_status==='Unpaid').length;
+  document.getElementById('kpiRevenue').textContent = fmt(orders.reduce((a,b)=>a+Number(b.total_rp||0),0));
+  document.getElementById('kpiCost').textContent = fmt(orders.reduce((a,b)=>a+Number(b.barang_rp||0),0));
+  document.getElementById('kpiOut').textContent = orders.filter(o=>o.status==='menunggu').length;
   renderTop(orders);
 }
 
@@ -314,17 +315,19 @@ function renderTop(orders){
 function renderOrders(){
   const j = await fetchData();
   const orders = j.orders || [];
-  const filtered = filterStatus ? orders.filter(o=>o.payment_status===filterStatus) : orders;
+  const filtered = filterStatus ? orders.filter(o=>o.status===filterStatus) : orders;
   const tb = document.getElementById('ordersTable');
   if(!filtered.length){ tb.innerHTML='<tr><td colspan="6" class="muted">Belum ada orders</td></tr>'; return; }
   tb.innerHTML=filtered.slice(0,25).map(o=>`
     <tr>
       <td>${o.order_id}</td>
       <td>${o.customer_name||''}</td>
-      <td><a class="link" href="https://wa.me/${String(o.customer_wa||'').replace(/\\D/g,'')}" target="_blank">${o.customer_wa||''}</a></td>
-      <td class="num">${fmt(o.dp_paid_idr)}</td>
-      <td><span class="badge ${String(o.payment_status||'').toLowerCase()}">${o.payment_status||'-'}</span></td>
-      <td></td>
+      <td><a class="link" href="https://wa.me/${String(o.customer_wa||'').replace(/\D/g,'')}" target="_blank">${o.customer_wa||''}</a></td>
+      <td class="num">${fmt(o.total_rp)}</td>
+      <td><span class="badge ${String(o.status||'').toLowerCase()}">${o.status||'-'}</span></td>
+      <td>
+        ${role==='admin'?`<a class="chip act" href="/invoice.html?order_id=${o.order_id}&customer_name=${encodeURIComponent(o.customer_name||'')}&wa=${o.customer_wa}&date=${o.created_at?o.created_at.slice(0,10):''}&status=${o.status}&rate=2200&items=${encodeURIComponent(JSON.stringify([{name:o.item_desc||'Item', qty:1, price_idr: Number(o.total_rp||0)}]))}" target="_blank">Invoice</a>`:''}
+      </td>
     </tr>
   `).join('');
 }
@@ -343,12 +346,11 @@ function renderFilterChips(){
 
 async function createOrder(){
   const body={
-    type:'order-create',
     trip_id: document.getElementById('fTrip').value||'1',
     customer_name: document.getElementById('fName').value,
     customer_wa: document.getElementById('fWa').value,
+    item_desc: document.getElementById('fNotes').value,
     dp_paid_idr: Number(document.getElementById('fDp').value||0),
-    payment_status: Number(document.getElementById('fDp').value||0)>0?'Partial/DP':'Unpaid',
     status:'menunggu',
     notes: document.getElementById('fNotes').value
   };
