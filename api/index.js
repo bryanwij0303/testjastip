@@ -32,9 +32,14 @@ function ok(res, data) {
 }
 
 async function parseJsonBody(req) {
-  const raw = await req.text().catch(() => '');
-  if (!raw || !raw.trim()) return {};
-  try { return JSON.parse(raw); } catch (e) { return {}; }
+  try {
+    if (req.body && typeof req.body === 'object') return req.body;
+    const raw = await req.text();
+    if (!raw || !raw.trim()) return {};
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
 }
 
 function makeOrder(body, data) {
