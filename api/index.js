@@ -132,3 +132,61 @@ module.exports = async (req, res) => {
 
   return sendJson(res, 404, { error: 'not_found' });
 };
+
+  if (pathname === '/api/products') {
+    return sendJson(res, 200, {
+      categories: ['Fashion', 'Elektronik', 'Beauty & skincare', 'Home living', 'Aksesori'],
+      products: [
+        {name:'Jaket kulit', category:'Fashion', est:'Rp250.000 - Rp800.000'},
+        {name:'Sepatu sneakers', category:'Fashion', est:'Rp200.000 - Rp600.000'},
+        {name:'Tas selempang', category:'Fashion', est:'Rp120.000 - Rp300.000'},
+        {name:'Power bank 20k', category:'Elektronik', est:'Rp80.000 - Rp150.000'},
+        {name:'Headphone BT', category:'Elektronik', est:'Rp150.000 - Rp400.000'},
+        {name:'Set skincare', category:'Beauty & skincare', est:'Rp180.000 - Rp500.000'},
+        {name:'Lampu meja LED', category:'Home living', est:'Rp60.000 - Rp150.000'},
+        {name:'Casing HP', category:'Aksesori', est:'Rp30.000 - Rp100.000'}
+      ]
+    });
+  }
+
+  if (pathname === '/api/estimate') {
+    if (req.method === 'GET') {
+      const dest = String(parsed.query.dest || '').trim();
+      const method = String(parsed.query.method || 'Sea').trim();
+      const weight = Number(parsed.query.weight || 0);
+      const volume = Number(parsed.query.volume || 0);
+      const rateMap = {Sea:{base:40000,perKg:4000,perM3:150000},Air:{base:80000,perKg:9000,perM3:350000},Express:{base:120000,perKg:15000,perM3:600000}};
+      const r = rateMap[method] || rateMap.Sea;
+      const est = r.base + (weight * r.perKg) + (volume * r.perM3);
+      return sendJson(res, 200, { dest, method, weight, volume, estimated: Math.round(est), currency:'IDR' });
+    }
+    return sendJson(res, 405, { error: 'method_not_allowed' });
+  }
+
+  if (pathname === '/api/chat') {
+    if (req.method === 'POST') {
+      const raw = await req.text().catch(() => '');
+      let body = {};
+      try { body = JSON.parse(raw); } catch {}
+      const message = String(body.message || '').trim();
+      if (!message) return sendJson(res, 400, { error: 'message required' });
+      const lower = message.toLowerCase();
+      let reply = null;
+      if (lower.includes('ongkir') || lower.includes('estimasi') || lower.includes('harga')) {
+        reply = 'Estimasi ongkir bisa dicek di tab Estimasi. Harga barang tergantung supplier China. Mau saya hubungkan ke CS? https://wa.me/6285161593848';
+      } else if (lower.includes('order') || lower.includes('pesan') || lower.includes('mau beli')) {
+        reply = 'Oke, saya bantu catat permintaan ordermu. Kirim detail barang + quantity ya. Setelah itu saya lanjut ke CS untuk konfirmasi.';
+      } else if (lower.includes('status') || lower.includes('lacak') || lower.includes('cek')) {
+        reply = 'Cek status order kamu lewat tab Tracker dengan Order ID atau nomor WA. Atau kirim ke saya, saya cek.';
+      } else if (lower.includes('halo') || lower.includes('hai') || lower.includes('info')) {
+        reply = 'Halo! Saya asisten Titiport. Kami jual titip barang dari China. Estimasi ongkir ada di website, atau tanya apa saja di sini.';
+      } else {
+        reply = 'Terima kasih sudah menanyakan. Bisa lebih spesifik? Misal estimasi ongkir, order, atau status. Atau langsung WA CS: https://wa.me/6285161593848';
+      }
+      return sendJson(res, 200, { reply });
+    }
+    return sendJson(res, 405, { error: 'method_not_allowed' });
+  }
+
+  return sendJson(res, 404, { error: 'not_found' });
+};
