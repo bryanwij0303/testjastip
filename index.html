@@ -337,7 +337,7 @@ function showTab(t){
   const map={home:'homeCard',track:'trackCard',chat:'chatCard',products:'productsCard',orders:'ordersCard'};
   cards.forEach(el=>el.classList.add('hidden'));
   if(map[t] && document.getElementById(map[t])) document.getElementById(map[t]).classList.remove('hidden');
-  if(t==='home') document.getElementById('homeCard')?.classList.remove('hidden');
+  if(t==='home'){document.getElementById('homeCard')?.classList.remove('hidden');} else {document.getElementById('homeCard')?.classList.add('hidden');}
   navs.forEach(a=>a.classList.remove('act'));
   const navMap={home:0,track:1,chat:2,products:3,orders:4};
   if(navs[navMap[t]]) navs[navMap[t]].classList.add('act');
