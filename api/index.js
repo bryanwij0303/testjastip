@@ -14,7 +14,10 @@ function cors(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 200;
+    return res.end();
+  }
 }
 
 function bad(res, msg) {
@@ -62,7 +65,14 @@ module.exports = async (req, res) => {
   cors(req, res);
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
-  const body = await parseJsonBody(req);
+  let body = {};
+  try {
+    body = await parseJsonBody(req);
+  } catch (e) {
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'bad_request' }));
+  }
 
   if (pathname === '/api/orders') {
     if (req.method === 'GET') return ok(res, readData());
