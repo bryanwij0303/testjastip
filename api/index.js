@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
-
 const DATA_PATH = path.join(process.cwd(), 'data.json');
 const ADMIN_PASS = process.env.ADMIN_PASS || 'titiport123';
 
@@ -21,40 +20,47 @@ function cors(req, res) {
 function bad(res, msg) { return res.status(400).json({ error: msg }); }
 function ok(res, data) { return res.status(200).json(data); }
 
+async function parseJsonBody(req) {
+  const raw = await req.text().catch(() => '');
+  if (!raw || !raw.trim()) return {};
+  try { return JSON.parse(raw); } catch (e) { return {}; }
+}
+
+function makeOrder(body, data) {
+  return {
+    order_id: body.order_id || (data.orders.length ? Math.max(...data.orders.map(o => Number(o.order_id) || 0)) + 1 : 1),
+    trip_id: Number(body.trip_id || 1),
+    customer_name: String(body.customer_name || ''),
+    customer_wa: String(body.customer_wa || ''),
+    item_desc: String(body.item_desc || ''),
+    cny_subtotal: Number(body.cny_subtotal || 0),
+    weight_kg: Number(body.weight_kg || 0),
+    volume_cbm: Number(body.volume_cbm || 0),
+    shipping_method: String(body.shipping_method || ''),
+    fee_rate: Number(body.fee_rate || 0.08),
+    fee_rp: Number(body.fee_rp || 0),
+    barang_rp: Number(body.barang_rp || 0),
+    ongkir_rp: Number(body.ongkir_rp || 0),
+    total_rp: Number(body.total_rp || 0),
+    status: String(body.status || 'menunggu'),
+    created_at: body.created_at || new Date().toISOString(),
+    invoice_no: String(body.invoice_no || ''),
+    paid_at: body.paid_at || '',
+    notes: String(body.notes || '')
+  };
+}
+
 module.exports = async (req, res) => {
   cors(req, res);
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
-  let body = {};
-  try { body = await req.json().catch(async () => { const t = await req.text(); try { return JSON.parse(t); } catch(e){ return {}; } }); } catch (e) { body = {}; }
+  const body = await parseJsonBody(req);
 
   if (pathname === '/api/orders') {
     if (req.method === 'GET') return ok(res, readData());
     if (req.method === 'POST') {
-      let body = {};
-      try { body = await req.json().catch(() => ({})); } catch (e) { }
       const data = readData();
-      const order = {
-        order_id: body.order_id || (data.orders.length ? Math.max(...data.orders.map(o => Number(o.order_id) || 0)) + 1 : 1),
-        trip_id: body.trip_id || 1,
-        customer_name: body.customer_name || '',
-        customer_wa: body.customer_wa || '',
-        item_desc: body.item_desc || '',
-        cny_subtotal: Number(body.cny_subtotal || 0),
-        weight_kg: Number(body.weight_kg || 0),
-        volume_cbm: Number(body.volume_cbm || 0),
-        shipping_method: body.shipping_method || '',
-        fee_rate: Number(body.fee_rate || 0.08),
-        fee_rp: Number(body.fee_rp || 0),
-        barang_rp: Number(body.barang_rp || 0),
-        ongkir_rp: Number(body.ongkir_rp || 0),
-        total_rp: Number(body.total_rp || 0),
-        status: body.status || 'menunggu',
-        created_at: body.created_at || new Date().toISOString(),
-        invoice_no: body.invoice_no || '',
-        paid_at: body.paid_at || '',
-        notes: body.notes || ''
-      };
+      const order = makeOrder(body, data);
       data.orders.push(order);
       writeData(data);
       return ok(res, { ok: true, order });
@@ -64,7 +70,7 @@ module.exports = async (req, res) => {
 
   if (pathname === '/api/tracker') {
     if (req.method === 'GET') {
-      const q = parsed.query.q || '';
+      const q = String(parsed.query.q || '').trim();
       const data = readData();
       const order = (data.orders || []).find(o => String(o.order_id) === String(q) || String(o.customer_wa).includes(String(q)));
       return order ? ok(res, { order }) : res.status(404).json({ error: 'not_found' });
@@ -73,10 +79,7 @@ module.exports = async (req, res) => {
   }
 
   if (pathname.startsWith('/api/admin/')) {
-    if (req.method === 'OPTIONS') return res.status(200).end();
     if (pathname === '/api/admin/login' && req.method === 'POST') {
-      let body = {};
-      try { body = await req.json().catch(() => ({})); } catch (e) { }
       if (body.password === ADMIN_PASS) return ok(res, { ok: true, role: 'admin' });
       return res.status(401).json({ error: 'invalid' });
     }
@@ -88,33 +91,29 @@ module.exports = async (req, res) => {
       return ok(res, { orders, trips: data.trips });
     }
     if (pathname === '/api/admin/orders' && req.method === 'POST') {
-      let body = {};
-      try { body = await req.json().catch(() => ({})); } catch (e) { }
       const data = readData();
-      const order = {
-        order_id: body.order_id || (data.orders.length ? Math.max(...data.orders.map(o => Number(o.order_id) || 0)) + 1 : 1),
-        trip_id: body.trip_id || 1,
-        customer_name: body.customer_name || '',
-        customer_wa: body.customer_wa || '',
-        item_desc: body.item_desc || '',
-        cny_subtotal: Number(body.cny_subtotal || 0),
-        weight_kg: Number(body.weight_kg || 0),
-        volume_cbm: Number(body.volume_cbm || 0),
-        shipping_method: body.shipping_method || '',
-        fee_rate: Number(body.fee_rate || 0.08),
-        fee_rp: Number(body.fee_rp || 0),
-        barang_rp: Number(body.barang_rp || 0),
-        ongkir_rp: Number(body.ongkir_rp || 0),
-        total_rp: Number(body.total_rp || 0),
-        status: body.status || 'menunggu',
-        created_at: body.created_at || new Date().toISOString(),
-        invoice_no: body.invoice_no || '',
-        paid_at: body.paid_at || '',
-        notes: body.notes || ''
-      };
+      const order = makeOrder(body, data);
       data.orders.push(order);
       writeData(data);
       return ok(res, { ok: true, order });
+    }
+    if (pathname.startsWith('/api/admin/orders/') && req.method === 'PATCH') {
+      const id = pathname.split('/').pop();
+      const data = readData();
+      const idx = data.orders.findIndex(o => String(o.order_id) === String(id));
+      if (idx === -1) return res.status(404).json({ error: 'not_found' });
+      data.orders[idx] = { ...data.orders[idx], ...body };
+      writeData(data);
+      return ok(res, { ok: true, order: data.orders[idx] });
+    }
+    if (pathname.startsWith('/api/admin/orders/') && req.method === 'DELETE') {
+      const id = pathname.split('/').pop();
+      const data = readData();
+      const idx = data.orders.findIndex(o => String(o.order_id) === String(id));
+      if (idx === -1) return res.status(404).json({ error: 'not_found' });
+      const removed = data.orders.splice(idx, 1)[0];
+      writeData(data);
+      return ok(res, { ok: true, order: removed });
     }
     return res.status(404).json({ error: 'not_found' });
   }
