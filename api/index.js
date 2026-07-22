@@ -96,9 +96,7 @@ module.exports = async (req, res) => {
 
   if (pathname === "/api/chat") {
     if (req.method === "POST") {
-      const chatRaw = await new Promise(resolve => { let d=''; req.on('data',c=>d+=c); req.on('end',()=>resolve(d)); }).catch(()=>'');
-      const chatBody = chatRaw ? JSON.parse(chatRaw) : {};
-      const message = String(chatBody.message || "").trim();
+      const message = String(body.message || "").trim();
 
       if (!message) return sendJson(res, 400, { error: 'message required' });
       const lower = message.toLowerCase();
