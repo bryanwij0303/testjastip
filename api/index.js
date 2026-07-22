@@ -17,8 +17,16 @@ function cors(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 }
 
-function bad(res, msg) { return res.status(400).json({ error: msg }); }
-function ok(res, data) { return res.status(200).json(data); }
+function bad(res, msg) {
+  res.statusCode = 400;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ error: msg }));
+}
+function ok(res, data) {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
+}
 
 async function parseJsonBody(req) {
   const raw = await req.text().catch(() => '');
@@ -65,23 +73,17 @@ module.exports = async (req, res) => {
       writeData(data);
       return ok(res, { ok: true, order });
     }
-    return res.status(405).json({ error: 'method_not_allowed' });
-  }
-
-  if (pathname === '/api/tracker') {
-    if (req.method === 'GET') {
-      const q = String(parsed.query.q || '').trim();
-      const data = readData();
-      const order = (data.orders || []).find(o => String(o.order_id) === String(q) || String(o.customer_wa).includes(String(q)));
-      return order ? ok(res, { order }) : res.status(404).json({ error: 'not_found' });
-    }
-    return res.status(405).json({ error: 'method_not_allowed' });
+    res.statusCode = 405;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'method_not_allowed' }));
   }
 
   if (pathname.startsWith('/api/admin/')) {
     if (pathname === '/api/admin/login' && req.method === 'POST') {
       if (body.password === ADMIN_PASS) return ok(res, { ok: true, role: 'admin' });
-      return res.status(401).json({ error: 'invalid' });
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'invalid' }));
     }
     if (pathname === '/api/admin/orders' && req.method === 'GET') {
       const data = readData();
@@ -101,7 +103,11 @@ module.exports = async (req, res) => {
       const id = pathname.split('/').pop();
       const data = readData();
       const idx = data.orders.findIndex(o => String(o.order_id) === String(id));
-      if (idx === -1) return res.status(404).json({ error: 'not_found' });
+      if (idx === -1) {
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'not_found' }));
+      }
       data.orders[idx] = { ...data.orders[idx], ...body };
       writeData(data);
       return ok(res, { ok: true, order: data.orders[idx] });
@@ -110,13 +116,21 @@ module.exports = async (req, res) => {
       const id = pathname.split('/').pop();
       const data = readData();
       const idx = data.orders.findIndex(o => String(o.order_id) === String(id));
-      if (idx === -1) return res.status(404).json({ error: 'not_found' });
+      if (idx === -1) {
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(JSON.stringify({ error: 'not_found' }));
+      }
       const removed = data.orders.splice(idx, 1)[0];
       writeData(data);
       return ok(res, { ok: true, order: removed });
     }
-    return res.status(404).json({ error: 'not_found' });
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'not_found' }));
   }
 
-  return res.status(404).json({ error: 'not_found' });
+  res.statusCode = 404;
+  res.setHeader('Content-Type', 'application/json');
+  return res.end(JSON.stringify({ error: 'not_found' }));
 };
