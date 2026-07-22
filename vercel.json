@@ -6,6 +6,8 @@
     { "src": "invoice.html", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/api/health", "dest": "/api/health.js" },
+    { "src": "/api/envcheck", "dest": "/api/envcheck.js" },
     { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "src": "/invoice.html", "dest": "/invoice.html" },
     { "src": "/(.*)", "dest": "/index.html" }
