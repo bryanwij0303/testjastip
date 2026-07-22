@@ -1,6 +1,8 @@
 {
   "version": 2,
   "builds": [
+    { "src": "api/health.js", "use": "@vercel/node" },
+    { "src": "api/envcheck.js", "use": "@vercel/node" },
     { "src": "api/index.js", "use": "@vercel/node" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "invoice.html", "use": "@vercel/static" }
