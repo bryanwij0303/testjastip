@@ -84,7 +84,7 @@ module.exports = async (req, res) => {
 
   if (pathname === "/api/chat") {
     if (req.method === "POST") {
-      const chatRaw = typeof req.body === "string" ? req.body : await req.text.bind(req)().catch(() => "");
+      const chatRaw = await new Promise(resolve => { let d=''; req.on('data',c=>d+=c); req.on('end',()=>resolve(d)); }).catch(()=>'');
       const chatBody = chatRaw ? JSON.parse(chatRaw) : {};
       const message = String(chatBody.message || "").trim();
 
