@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
-const DATA_PATH = path.join(process.cwd(), 'data.json');
+const DATA_PATH = path.join('/tmp', 'titiport-data.json');
 const ADMIN_PASS = process.env.ADMIN_PASS || 'titiport123';
 
 function readData() {
