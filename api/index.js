@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
       return sendJson(res, 200, { orders: orders || [], trips: trips || [] });
     }
     if (req.method === 'POST') {
-      const raw = await req.text().catch(() => '');
+      const raw = typeof req.body === 'string' ? req.body : await req.text().catch(() => '');
       let body = {};
       try { body = JSON.parse(raw); } catch {}
       const order_id = String(body.order_id || Date.now());
@@ -86,7 +86,7 @@ module.exports = async (req, res) => {
 
   if (pathname === '/api/chat') {
     if (req.method === 'POST') {
-      const raw = await req.text().catch(() => '');
+      const raw = typeof req.body === 'string' ? req.body : await req.text().catch(() => '');
       let body = {};
       try { body = JSON.parse(raw); } catch {}
       const message = String(body.message || '').trim();
@@ -106,7 +106,7 @@ module.exports = async (req, res) => {
   if (pathname.startsWith('/api/admin/')) {
     const ADMIN_PASS = process.env.ADMIN_PASS || 'titiport123';
     if (pathname === '/api/admin/login' && req.method === 'POST') {
-      const raw = await req.text().catch(() => '');
+      const raw = typeof req.body === 'string' ? req.body : await req.text().catch(() => '');
       let body = {};
       try { body = JSON.parse(raw); } catch {}
       if (body.password === ADMIN_PASS) return sendJson(res, 200, { ok: true, role: 'admin' });
@@ -123,7 +123,7 @@ module.exports = async (req, res) => {
       return sendJson(res, 200, { orders: filtered, trips: trips || [] });
     }
     if (pathname === '/api/admin/orders' && req.method === 'POST') {
-      const raw = await req.text().catch(() => '');
+      const raw = typeof req.body === 'string' ? req.body : await req.text().catch(() => '');
       let body = {};
       try { body = JSON.parse(raw); } catch {}
       const order_id = String(body.order_id || Date.now());
