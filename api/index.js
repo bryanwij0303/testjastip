@@ -82,10 +82,12 @@ module.exports = async (req, res) => {
     return sendJson(res, 200, { dest, method, weight, volume, estimated: Math.round(est), currency:'IDR' });
   }
 
-  if (pathname === '/api/chat') {
-    if (req.method === 'POST') {
-      
-      const message = String(body.message || '').trim();
+  if (pathname === "/api/chat") {
+    if (req.method === "POST") {
+      const chatRaw = typeof req.body === "string" ? req.body : await req.text.bind(req)().catch(() => "");
+      const chatBody = chatRaw ? JSON.parse(chatRaw) : {};
+      const message = String(chatBody.message || "").trim();
+
       if (!message) return sendJson(res, 400, { error: 'message required' });
       const lower = message.toLowerCase();
       let reply = null;
