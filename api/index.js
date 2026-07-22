@@ -27,9 +27,7 @@ module.exports = async (req, res) => {
       return sendJson(res, 200, { orders: orders || [], trips: trips || [] });
     }
     if (req.method === 'POST') {
-      const raw = typeof req.body === 'string' ? req.body : await req.text.bind(req)().catch(() => '');
-      let body = {};
-      try { body = JSON.parse(raw); } catch {}
+      
       const order_id = String(body.order_id || Date.now());
       const { data: order, error } = await supabase.from('orders').insert({
         order_id, trip_id: Number(body.trip_id || 1), customer_name: String(body.customer_name || ''), customer_wa: String(body.customer_wa || ''), item_desc: String(body.item_desc || ''),
@@ -86,9 +84,7 @@ module.exports = async (req, res) => {
 
   if (pathname === '/api/chat') {
     if (req.method === 'POST') {
-      const raw = typeof req.body === 'string' ? req.body : await req.text.bind(req)().catch(() => '');
-      let body = {};
-      try { body = JSON.parse(raw); } catch {}
+      
       const message = String(body.message || '').trim();
       if (!message) return sendJson(res, 400, { error: 'message required' });
       const lower = message.toLowerCase();
@@ -106,9 +102,7 @@ module.exports = async (req, res) => {
   if (pathname.startsWith('/api/admin/')) {
     const ADMIN_PASS = process.env.ADMIN_PASS || 'titiport123';
     if (pathname === '/api/admin/login' && req.method === 'POST') {
-      const raw = typeof req.body === 'string' ? req.body : await req.text.bind(req)().catch(() => '');
-      let body = {};
-      try { body = JSON.parse(raw); } catch {}
+      
       if (body.password === ADMIN_PASS) return sendJson(res, 200, { ok: true, role: 'admin' });
       return sendJson(res, 401, { error: 'invalid' });
     }
@@ -123,9 +117,7 @@ module.exports = async (req, res) => {
       return sendJson(res, 200, { orders: filtered, trips: trips || [] });
     }
     if (pathname === '/api/admin/orders' && req.method === 'POST') {
-      const raw = typeof req.body === 'string' ? req.body : await req.text.bind(req)().catch(() => '');
-      let body = {};
-      try { body = JSON.parse(raw); } catch {}
+      
       const order_id = String(body.order_id || Date.now());
       const { data: order, error } = await supabase.from('orders').insert({
         order_id, trip_id: Number(body.trip_id || 1), customer_name: String(body.customer_name || ''), customer_wa: String(body.customer_wa || ''), item_desc: String(body.item_desc || ''),
