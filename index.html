@@ -282,14 +282,14 @@ function doLogin(){
   fetch(API_ADMIN+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:key})})
   .then(async r=>{ const j=await r.json(); if(!r.ok) throw j; return j; })
   .then(d=>{
-    if(d.error) return alert(d.error);
+    if(d.error) return alert('Login error: '+JSON.stringify(d));
     role=d.role||'guest'; wa=d.wa||''; tripId=d.tripId||'';
     if(role==='admin') document.getElementById('rolePill').textContent='Admin';
     else document.getElementById('rolePill').textContent='Tamu';
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('mainNav').classList.remove('hidden');
-    renderDashboard(); renderOrders();
+    renderDashboard(); renderOrders(); renderTrips();
   })
   .catch(e=>alert('Auth error: '+JSON.stringify(e)));
 }
