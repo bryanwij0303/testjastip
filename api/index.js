@@ -95,6 +95,18 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: 'method_not_allowed' }));
   }
 
+  if (pathname === '/api/tracker') {
+    if (req.method === 'GET') {
+      const q = String(parsed.query.q || '').trim();
+      const data = readData();
+      const order = (data.orders || []).find(o => String(o.order_id) === String(q) || String(o.customer_wa).includes(String(q)));
+      return order ? ok(res, { order }) : res.statusCode = 404, res.setHeader('Content-Type', 'application/json'), res.end(JSON.stringify({ error: 'not_found' }));
+    }
+    res.statusCode = 405;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'method_not_allowed' }));
+  }
+
   if (pathname.startsWith('/api/admin/')) {
     if (pathname === '/api/admin/login' && req.method === 'POST') {
       if (body.password === ADMIN_PASS) return ok(res, { ok: true, role: 'admin' });
