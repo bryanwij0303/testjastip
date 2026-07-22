@@ -17,6 +17,18 @@ module.exports = async (req, res) => {
   cors(req, res);
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
+  let body = {};
+  try {
+    const stream = req;
+    const chunks = [];
+    await new Promise((resolve, reject) => {
+      stream.on("data", (chunk) => chunks.push(chunk));
+      stream.on("end", () => resolve());
+      stream.on("error", reject);
+    });
+    const raw = Buffer.concat(chunks).toString();
+    if (raw && raw.trim()) { try { body = JSON.parse(raw); } catch {} }
+  } catch (ignore) {}
 
   if (pathname === '/api/orders') {
     if (req.method === 'GET') {
