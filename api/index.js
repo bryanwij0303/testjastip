@@ -34,7 +34,7 @@ function ok(res, data) {
 async function parseJsonBody(req) {
   try {
     if (req.body && typeof req.body === 'object') return req.body;
-    const raw = await req.text();
+    const raw = typeof req.body === 'string' ? req.body : await req.text();
     if (!raw || !raw.trim()) return {};
     return JSON.parse(raw);
   } catch (e) {
