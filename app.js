@@ -101,7 +101,7 @@ async function sendChat(){
   try {
     const r = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:chatHistory.slice(-10)})});
     const j = await r.json();
-    const reply = j.reply || 'Maaf, saya sedang gangguan. Bisa hubungi CS: https://wa.me/6281230821496';
+    const reply = j.reply || 'Maaf, saya sedang gangguan. Bisa hubungi CS: ';
     chatHistory.push({role:'assistant',content:reply});
     renderChat();
   } catch (e) {
