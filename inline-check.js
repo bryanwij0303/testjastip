@@ -1,4 +1,3 @@
-const API = "/api/orders";
 const API_TRACKER = "/api/tracker";
 const API_ADMIN = "/api/admin";
 let role='guest', wa='', tripId='', filterStatus='';
@@ -25,10 +24,15 @@ function formatOrderText(order){
 
 function showTab(t){
   const cards = document.querySelectorAll('.card');
-  cards.forEach(el=>el.classList.add('hidden'));
+  const navs = document.querySelectorAll('#mainNav a');
   const map={home:'homeCard',track:'trackCard',chat:'chatCard',products:'productsCard',orders:'ordersCard'};
+  cards.forEach(el=>el.classList.add('hidden'));
   if(map[t] && document.getElementById(map[t])) document.getElementById(map[t]).classList.remove('hidden');
-  if(t==='home') document.getElementById('homeCard')?.classList.remove('hidden');
+  if(t==='home'){document.getElementById('homeCard')?.classList.remove('hidden');} else {document.getElementById('homeCard')?.classList.add('hidden');}
+  navs.forEach(a=>a.classList.remove('act'));
+  const navMap={home:0,track:1,chat:2,products:3,orders:4};
+  if(navs[navMap[t]]) navs[navMap[t]].classList.add('act');
+  if(t==='home') renderDashboard();
   if(t==='orders') renderOrders();
   if(t==='products') renderProducts();
   if(t==='chat') document.getElementById('chatInput')?.focus();
@@ -69,7 +73,7 @@ async function estimateShipping(){
   const rateMap = {Sea:{base:40000,perKg:4000,perM3:150000},Air:{base:80000,perKg:9000,perM3:350000},Express:{base:120000,perKg:15000,perM3:600000}};
   const r = rateMap[method] || rateMap.Sea;
   const est = r.base + (weight * r.perKg) + (volume * r.perM3);
-  out.innerHTML = `Estimasi ongkir ke <b>${dest}</b> (${method}): <b>Rp ${Math.round(est).toLocaleString('id-ID')}</b><br><span style="color:var(--muted);font-size:12px">Harga bisa naik/turun. Hubungi CS via WA untuk harga pasti.</span>`;
+  out.innerHTML = `Estimasi ongkir ke <b>${dest}</b> (${method}): <b>Rp ${Math.round(est).toLocaleString('id-ID')}</b><br><span class="muted">Harga bisa naik/turun. Hubungi CS via WA untuk harga pasti.</span>`;
 }
 
 async function trackOrder(){
@@ -101,7 +105,7 @@ async function sendChat(){
   try {
     const r = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:chatHistory.slice(-10)})});
     const j = await r.json();
-    const reply = j.reply || 'Maaf, saya sedang gangguan. Bisa hubungi CS: https://wa.me/6281230821496';
+    const reply = j.reply || 'Maaf, saya sedang gangguan. Bisa hubungi CS: https://wa.me/6285161593848';
     chatHistory.push({role:'assistant',content:reply});
     renderChat();
   } catch (e) {
@@ -111,7 +115,7 @@ async function sendChat(){
 }
 function renderChat(){
   const box = document.getElementById('chatBox');
-  box.innerHTML = chatHistory.map(m=>'<div style="margin:6px 0;padding:8px;border-radius:10px;background:'+(m.role==='user'?'var(--accent)':'var(--bg-3)')+';color:'+(m.role==='user'?'#fff':'var(--text)')+'">'+escapeHtml(m.content)+'</div>').join('');
+  box.innerHTML = chatHistory.map(m=>`<div style="margin:6px 0;padding:8px;border-radius:10px;background:${m.role==='user'?'var(--accent)':'var(--bg-3)'};color:${m.role==='user'?'#fff':'var(--text)'};align-self:${m.role==='user'?'flex-end':'flex-start'}">${escapeHtml(m.content)}</div>`).join('');
   box.scrollTop = box.scrollHeight;
 }
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -119,23 +123,94 @@ function escapeHtml(s){return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp
 const PRODUCTS = [
   {category:'Fashion',items:[{name:'Jaket kulit',est:'Rp250.000 - Rp800.000'},{name:'Sepatu sneakers',est:'Rp200.000 - Rp600.000'},{name:'Tas selempang',est:'Rp120.000 - Rp300.000'}]},
   {category:'Elektronik',items:[{name:'Power bank 20k',est:'Rp80.000 - Rp150.000'},{name:'Headphone BT',est:'Rp150.000 - Rp400.000'}]},
-  {category:'Beauty & skincare',items:[{name:'Set skincare',est:'Rp180.000 - Rp500.000'}]}
+  {category:'Beauty',items:[{name:'Set skincare',est:'Rp180.000 - Rp500.000'}]}
 ];
 function renderProducts(){
   const chips = document.getElementById('productChips');
   const list = document.getElementById('productsGrid');
-  chips.innerHTML = PRODUCTS.map((p,i)=>'<button class="chip '+(i===0?'act':'')+'" onclick="showProduct('+i+')">'+p.category+'</button>').join('');
+  chips.innerHTML = PRODUCTS.map((p,i)=>`<button class="chip ${i===0?'act':''}" onclick="showProduct(${i})">${p.category}</button>`).join('');
   if(PRODUCTS[0]) showProduct(0);
 }
 function showProduct(idx){
   const p = PRODUCTS[idx];
   const list = document.getElementById('productsGrid');
-  list.innerHTML = p.items.map(it=>'<div style="padding:10px;border:1px solid var(--border);border-radius:12px;margin:8px 0;background:var(--bg-2)"><div style="font-weight:700">'+it.name+'</div><div style="color:var(--muted);font-size:12px">Estimasi: '+it.est+'</div></div>').join('');
+  list.innerHTML = p.items.map(it=>`<div style="padding:10px;border:1px solid var(--border);border-radius:12px;margin:8px 0;background:var(--bg-2)"><div style="font-weight:700">${it.name}</div><div class="muted">Estimasi: ${it.est}</div></div>`).join('');
 }
 
-async function renderDashboard(){}
-async function renderOrders(){}
-function renderFilterChips(){}
-function createOrder(){}
+async function renderDashboard(){
+  const j = await fetchData();
+  const orders = j.orders || [];
+  document.getElementById('kpiOrders').textContent = orders.length;
+  document.getElementById('kpiRevenue').textContent = fmt(orders.reduce((a,b)=>a+Number(b.total_rp||0),0));
+  document.getElementById('kpiCost').textContent = fmt(orders.reduce((a,b)=>a+Number(b.barang_rp||0),0));
+  document.getElementById('kpiOut').textContent = orders.filter(o=>o.status==='menunggu').length;
+  renderTop(orders);
+}
+
+function renderTop(orders){
+  const m={};
+  orders.forEach(o=>{const k=o.customer_name||'?'; m[k]=(m[k]||0)+1;});
+  const arr=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const tb=document.getElementById('topCustomers');
+  if(!arr.length){ tb.innerHTML='<tr><td colspan="2" class="muted">Belum ada data</td></tr>'; return; }
+  tb.innerHTML=arr.map(([k,v])=>`<tr><td>${k}</td><td style="text-align:right;font-weight:700">${v}</td></tr>`).join('');
+}
+
+function renderOrders(){
+  const j = await fetchData();
+  const orders = j.orders || [];
+  const filtered = filterStatus ? orders.filter(o=>o.status===filterStatus) : orders;
+  const tb = document.getElementById('ordersTable');
+  if(!filtered.length){ tb.innerHTML='<tr><td colspan="6" class="muted">Belum ada orders</td></tr>'; return; }
+  tb.innerHTML=filtered.slice(0,25).map(o=>`
+    <tr>
+      <td>${o.order_id}</td>
+      <td>${o.customer_name||''}</td>
+      <td><a class="link" href="https://wa.me/${String(o.customer_wa||'').replace(/\D/g,'')}" target="_blank">${o.customer_wa||''}</a></td>
+      <td class="num">${fmt(o.total_rp)}</td>
+      <td><span class="badge ${String(o.status||'').toLowerCase()}">${o.status||'-'}</span></td>
+      <td>
+        ${role==='admin'?`<a class="chip act" href="/invoice.html?order_id=${o.order_id}&customer_name=${encodeURIComponent(o.customer_name||'')}&wa=${o.customer_wa}&date=${o.created_at?o.created_at.slice(0,10):''}&status=${o.status}&rate=2200&items=${encodeURIComponent(JSON.stringify([{name:o.item_desc||'Item', qty:1, price_idr: Number(o.total_rp||0)}]))}" target="_blank">Invoice</a>`:''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function fetchData(){
+  const r=await fetch(API); return r.json();
+}
+
+function setFilter(st){filterStatus=filterStatus===st?'':st;renderFilterChips();renderOrders();}
+function renderFilterChips(){
+  const chips=[['Unpaid','Unpaid'],['Paid','Paid'],['DP','Partial/DP'],['Menunggu','menunggu']];
+  document.getElementById('filterChips').innerHTML=chips.map(([label,val])=>
+    `<button class="chip ${filterStatus===val?'act':''}" onclick="setFilter('${val}')">${label}</button>`
+  ).join('');
+}
+
+async function createOrder(){
+  const body={
+    trip_id: document.getElementById('fTrip').value||'1',
+    customer_name: document.getElementById('fName').value,
+    customer_wa: document.getElementById('fWa').value,
+    item_desc: document.getElementById('fNotes').value,
+    dp_paid_idr: Number(document.getElementById('fDp').value||0),
+    status:'menunggu',
+    notes: document.getElementById('fNotes').value
+  };
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(j.error){alert(j.error);return;}
+  alert('Order tersimpan #'+j.order_id);
+  document.getElementById('fName').value='';
+  document.getElementById('fWa').value='';
+  document.getElementById('fDp').value='';
+  document.getElementById('fNotes').value='';
+  renderOrders(); renderDashboard();
+}
+
 function scrollToForm(){const el=document.getElementById('fName'); el?.focus(); el?.scrollIntoView({behavior:'smooth',block:'center'});}
+
+// init filter chips
 renderFilterChips();
+</script>

@@ -101,11 +101,11 @@ module.exports = async (req, res) => {
       if (!message) return sendJson(res, 400, { error: 'message required' });
       const lower = message.toLowerCase();
       let reply = null;
-      if (lower.includes('ongkir') || lower.includes('estimasi') || lower.includes('harga')) reply = 'Estimasi ongkir bisa dicek di tab Estimasi. Harga barang tergantung supplier China. Mau saya hubungkan ke CS? https://wa.me/6285161593848';
+      if (lower.includes('ongkir') || lower.includes('estimasi') || lower.includes('harga')) reply = 'Estimasi ongkir bisa dicek di tab Estimasi. Harga barang tergantung supplier China. Mau saya hubungkan ke CS? https://wa.me/6281230821496';
       else if (lower.includes('order') || lower.includes('pesan') || lower.includes('mau beli')) reply = 'Oke, saya bantu catat permintaan ordermu. Kirim detail barang + quantity ya. Setelah itu saya lanjut ke CS untuk konfirmasi.';
       else if (lower.includes('status') || lower.includes('lacak') || lower.includes('cek')) reply = 'Cek status order kamu lewat tab Tracker dengan Order ID atau nomor WA. Atau kirim ke saya, saya cek.';
       else if (lower.includes('halo') || lower.includes('hai') || lower.includes('info')) reply = 'Halo! Saya asisten Titiport. Kami jual titip barang dari China. Estimasi ongkir ada di website, atau tanya apa saja di sini.';
-      else reply = 'Terima kasih sudah menanyakan. Bisa lebih spesifik? Misal estimasi ongkir, order, atau status. Atau langsung WA CS: https://wa.me/6285161593848';
+      else reply = 'Terima kasih sudah menanyakan. Bisa lebih spesifik? Misal estimasi ongkir, order, atau status. Atau langsung WA CS: https://wa.me/6281230821496';
       return sendJson(res, 200, { reply });
     }
     return sendJson(res, 405, { error: 'method_not_allowed' });
