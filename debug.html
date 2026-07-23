@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Titiport Debug</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;background:#0b0f17;color:#e7ecf1}
+    *{box-sizing:border-box}
+    main{max-width:980px;margin:0 auto;padding:24px}
+    h1{font-size:20px;margin:0 0 12px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+    .card{flex:1 1 280px;background:#12172a;border:1px solid #28314f;border-radius:12px;padding:16px}
+    label{display:block;font-size:12px;color:#a8b3c7;margin:6px 0 6px}
+    input,select,textarea{width:100%;background:#0b0f17;color:#e7ecf1;border:1px solid #28314f;border-radius:8px;padding:10px}
+    button{background:#4b8cff;color:#fff;border:none;border-radius:8px;padding:10px 12px;cursor:pointer}
+    button.secondary{background:#28314f;color:#e7ecf1}
+    pre{background:#0b0f17;border:1px solid #28314f;border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;font-size:13px}
+    .muted{color:#7a849b;font-size:12px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
+</head>
+<main>
+  <h1>Titiport Debug</h1>
+  <p class="muted">Simple endpoint tester for the Titiport stack.</p>
+
+  <div class="row">
+    <div class="card">
+      <h3>Tracker</h3>
+      <label>Query</label>
+      <input id="tq" placeholder="order ID or WA number" value="E2E-TEST-001" />
+      <button onclick="doGet('/api/tracker?q='+encodeURIComponent(document.getElementById('tq').value.trim()))">GET /api/tracker</button>
+      <pre id="trackerOut">-</pre>
+    </div>
+
+    <div class="card">
+      <h3>Orders</h3>
+      <button class="secondary" onclick="doGet('/api/orders')">GET /api/orders</button>
+      <pre id="ordersOut">-</pre>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <h3>Chat</h3>
+      <label>Message</label>
+      <input id="cmsg" value="halo" />
+      <button onclick="doPost('/api/chat',{message:document.getElementById('cmsg').value})">POST /api/chat</button>
+      <pre id="chatOut">-</pre>
+    </div>
+
+    <div class="card">
+      <h3>Create Test Order</h3>
+      <label>Order ID</label>
+      <input id="oid" value="E2E-001" />
+      <label>Customer Name</label>
+      <input id="oname" value="Test" />
+      <label>Customer WA</label>
+      <input id="owa" value="6281234567890" />
+      <label>Status</label>
+      <select id="ostatus">
+        <option value="menunggu">menunggu</option>
+        <option value="dikerjakan">dikerjakan</option>
+        <option value="selesai">selesai</option>
+        <option value="batal">batal</option>
+      </select>
+      <button onclick="doPost('/api/orders',{order_id:document.getElementById('oid').value,customer_name:document.getElementById('oname').value,customer_wa:document.getElementById('owa').value,status:document.getElementById('ostatus').value,item_desc:'debug order'})">POST /api/orders</button>
+      <pre id="createOut">-</pre>
+    </div>
+  </div>
+
+  <script>
+    const BASE = location.origin;
+    async function doGet(path){
+      const out = document.getElementById(path.includes('tracker')?'trackerOut':path.includes('orders')?'ordersOut':'chatOut');
+      try{
+        const r = await fetch(BASE+path);
+        const j = await r.json().catch(()=>({}));
+        out.textContent = JSON.stringify({status:r.status,body:j},null,2);
+      }catch(e){ out.textContent = 'ERR '+e.message; }
+    }
+    async function doPost(path, body){
+      const out = document.getElementById(path.includes('orders')?'createOut':'chatOut');
+      try{
+        const r = await fetch(BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const j = await r.json().catch(()=>({}));
+        out.textContent = JSON.stringify({status:r.status,body:j},null,2);
+      }catch(e){ out.textContent = 'ERR '+e.message; }
+    }
+  </script>
+</main>
+</html>

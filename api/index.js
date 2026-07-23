@@ -1,3 +1,7 @@
+const { initKB, search } = require('../rag.js');
+let _ragInited=false;
+async function ensureRag(){if(!_ragInited){await initKB();_ragInited=true;}}
+
 const { createClient } = require('@supabase/supabase-js');
 const url = require('url');
 const https = require('https');
@@ -100,56 +104,60 @@ module.exports = async (req, res) => {
     if (req.method === "POST") {
       const message = String(body.message || "").trim();
       if (!message) return sendJson(res, 400, { error: 'message required' });
+      const candidates = [
+        (process.env.VERCEL_API_CHAT || '').trim(),
+        (process.env.RAILWAY_API_CHAT || 'https://profound-kindness-production-6349.up.railway.app/api/chat').trim()
+      ].filter(Boolean);
 
-      let reply = '';
-      try {
-        const payload = JSON.stringify({
-          model: 'qwen2.5:1.5b',
-          messages: [
-            { role: 'system', content: 'Kamu adalah asisten CS Titiport. Jawab dalam bahasa Indonesia yang natural, singkat, dan to the point. Jangan terlalu formal.' },
-            { role: 'user', content: message }
-          ],
-          max_tokens: 500,
-          temperature: 0.3,
-          stream: false
-        });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 45000);
+      let reply = null;
 
-        const chatRes = await new Promise((resolve, reject) => {
-          const r = https.request({
-            hostname: 'localhost',
-            port: 8090,
-            path: '/v1/chat/completions',
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer local-dev-only-shared-secret-replace-me'
-            },
-            timeout: 20000
-          }, (res) => {
-            const chunks = [];
-            res.on('data', (chunk) => chunks.push(chunk));
-            res.on('end', () => {
-              try { resolve({ status: res.statusCode, body: JSON.parse(Buffer.concat(chunks).toString()) }); }
-              catch (e) { resolve({ status: res.statusCode, body: {} }); }
+      for (const base of candidates) {
+        try {
+          const chatRes = await new Promise((resolve, reject) => {
+            const { hostname, pathname: p, search } = new URL(base);
+            const req = https.request({
+              hostname,
+              path: `${p}${search || ''}`,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(base.includes('@') ? { 'Authorization': 'Basic ' + Buffer.from(base.split('@')[0]).toString('base64') } : {})
+              },
+              timeout: 20000,
+              signal: controller.signal
+            }, (res) => {
+              const chunks = [];
+              res.on('data', (chunk) => chunks.push(chunk));
+              res.on('end', () => {
+                try { resolve({ status: res.statusCode, body: JSON.parse(Buffer.concat(chunks).toString()) }); }
+                catch (e) { resolve({ status: res.statusCode, body: {} }); }
+              });
             });
+            req.on('error', reject);
+            req.write(JSON.stringify({ message, history: Array.isArray(body.history) ? body.history.slice(-10) : [] }));
+            req.end();
           });
-          r.on('error', reject);
-          r.write(payload);
-          r.end();
-        });
-
-        const choice = chatRes.body?.choices?.[0];
-        if (choice?.message?.content) {
-          reply = String(choice.message.content).trim();
-        } else {
-          reply = 'Maaf, sistem AI sedang sibuk. Coba lagi sebentar atau hubungi WA CS.';
+          if (chatRes.status === 200 && chatRes.body?.reply) {
+            reply = chatRes.body.reply;
+            break;
+          }
+        } catch (e) {
+          console.error('chat fallback failed', base, e.message);
         }
-      } catch (e) {
-        console.error('proxy chat error:', e.message);
-        reply = 'Sistem sedang gangguan, coba lagi sebentar.';
       }
+      clearTimeout(timer);
 
-      return sendJson(res, 200, { reply, source: 'future-agi' });
+      if (!reply) {
+        const lower = message.toLowerCase();
+        if (lower.includes('ongkir') || lower.includes('estimasi') || lower.includes('harga')) reply = 'Estimasi ongkir bisa dicek di tab Estimasi. Harga barang tergantung supplier China. Mau saya hubungkan ke CS? ';
+        else if (lower.includes('order') || lower.includes('pesan') || lower.includes('mau beli')) reply = 'Oke, saya bantu catat permintaan ordermu. Kirim detail barang + quantity ya. Setelah itu saya lanjut ke CS untuk konfirmasi.';
+        else if (lower.includes('status') || lower.includes('lacak') || lower.includes('cek')) reply = 'Cek status order kamu lewat tab Tracker dengan Order ID atau nomor WA. Atau kirim ke saya, saya cek.';
+        else if (lower.includes('halo') || lower.includes('hai') || lower.includes('info')) reply = 'Halo! Saya asisten Titiport. Kami jual titip barang dari China. Estimasi ongkir ada di website, atau tanya apa saja di sini.';
+        else reply = 'Terima kasih sudah menanyakan. Bisa lebih spesifik? Misal estimasi ongkir, order, atau status. Atau langsung WA CS: ';
+      }
+      return sendJson(res, 200, { reply, source: 'chat-fallback' });
     }
     return sendJson(res, 405, { error: 'method_not_allowed' });
   }
