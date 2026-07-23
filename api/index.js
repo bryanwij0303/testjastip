@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const url = require('url');
+const https = require('https');
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://npqvbrexccwxoovdrzcc.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_hkSvuVQtIut8FYQDqpJ8HQ_vuw1XdEu';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -12,6 +13,15 @@ function cors(req, res) {
 }
 
 function sendJson(res, status, data) { res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); }
+
+function traceToFutureAGI({source, message, reply, meta}) {
+  const payload = JSON.stringify({source, message, reply, meta});
+  const opts = {hostname:"localhost", port:8090, path:"/v1/traces", method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer local-dev-only-shared-secret-replace-me"}, timeout:2000};
+  const req = https.request(opts, (res) => { res.on("data", () => {}); res.on("end", () => {}); });
+  req.on("error", () => {});
+  req.write(payload);
+  req.end();
+}
 
 module.exports = async (req, res) => {
   cors(req, res);
@@ -106,6 +116,7 @@ module.exports = async (req, res) => {
       else if (lower.includes('status') || lower.includes('lacak') || lower.includes('cek')) reply = 'Cek status order kamu lewat tab Tracker dengan Order ID atau nomor WA. Atau kirim ke saya, saya cek.';
       else if (lower.includes('halo') || lower.includes('hai') || lower.includes('info')) reply = 'Halo! Saya asisten Titiport. Kami jual titip barang dari China. Estimasi ongkir ada di website, atau tanya apa saja di sini.';
       else reply = 'Terima kasih sudah menanyakan. Bisa lebih spesifik? Misal estimasi ongkir, order, atau status. Atau langsung WA CS: ';
+      traceToFutureAGI({source: "web-chat", message, reply, meta: {route: "chat"}});
       return sendJson(res, 200, { reply });
     }
     return sendJson(res, 405, { error: 'method_not_allowed' });
